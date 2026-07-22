@@ -95,6 +95,14 @@ export default function UsersView() {
     onError: (err) => alert(err.message || 'Failed to toggle user status.')
   });
 
+  const resetPasswordMutation = useMutation({
+    mutationFn: (userId) => usersApi.resetPassword(userId),
+    onSuccess: (data) => {
+      alert(data.message || 'Password reset OTP email sent successfully.');
+    },
+    onError: (err) => alert(err.message || 'Failed to send password reset email.')
+  });
+
   // Fetch users with filters
   const { data: usersResponse, isLoading, error, refetch } = useQuery({
     queryKey: ['usersList', { search, statusFilter, subFilter, page }],
@@ -154,8 +162,9 @@ export default function UsersView() {
         toggleStatusMutation.mutate(user.id);
       }
     } else if (action === 'reset_pass') {
-      console.error(`[UsersView] Missing Endpoint: POST /v1/admin/users/${user.id}/reset-password`);
-      alert('Endpoint Not Found');
+      if (window.confirm(`Are you sure you want to send a password reset OTP to ${user.name}?`)) {
+        resetPasswordMutation.mutate(user.id);
+      }
     }
   };
 

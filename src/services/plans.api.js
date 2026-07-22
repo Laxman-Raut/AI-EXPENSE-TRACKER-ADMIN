@@ -22,10 +22,13 @@ export const plansApi = {
   },
 
   deletePlan: async (id) => {
-    // TODO: Delete plan API endpoint is not supported by the original Express backend.
-    // Create a TODO comment instead of fake implementations or modifying routes.
-    console.warn(`TODO: Implement DELETE plan endpoint for ID: ${id}`);
-    throw new Error('Delete plan functionality is not supported by the backend APIs.');
+    const response = await apiClient.delete(`/v1/admin/plans/${id}`);
+    return response.data.data;
+  },
+
+  updateLimits: async (id, limitsData) => {
+    const response = await apiClient.post(`/v1/admin/plans/${id}/limits`, limitsData);
+    return response.data.data;
   }
 };
 export default plansApi;

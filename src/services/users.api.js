@@ -65,5 +65,10 @@ export const usersApi = {
     const response = await apiClient.patch(`/v1/admin/users/${id}/status`);
     return response.data.data;
   },
+
+  resetPassword: async (id) => {
+    const response = await apiClient.post(`/v1/admin/users/${id}/reset-password`);
+    return response.data;
+  },
 };
 export default usersApi;
