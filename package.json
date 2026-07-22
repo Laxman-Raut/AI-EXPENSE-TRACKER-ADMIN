@@ -1,5 +1,5 @@
 {
-  "name": "temp-dashboard",
+  "name": "dashboard",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -9,15 +9,25 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@hookform/resolvers": "^5.4.0",
+    "@reduxjs/toolkit": "^2.12.0",
+    "@tanstack/react-query": "^5.101.3",
+    "axios": "^1.18.1",
+    "lucide-react": "^1.25.0",
+    "next": "15.5.20",
     "react": "19.1.0",
     "react-dom": "19.1.0",
-    "next": "15.5.20"
+    "react-hook-form": "^7.82.0",
+    "react-redux": "^9.3.0",
+    "recharts": "^3.10.0",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
-    "tailwindcss": "^4",
     "eslint": "^9",
     "eslint-config-next": "15.5.20",
-    "@eslint/eslintrc": "^3"
+    "tailwindcss": "^4",
+    "typescript": "^5.9.3"
   }
 }
