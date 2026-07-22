@@ -1,12 +1,12 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { plansApi } from '@/services/plans.api';
 import { dashboardApi } from '@/services/dashboard.api';
 import { ChartSkeleton } from '../ui/Skeleton';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import { Layers, ShieldCheck, Zap, Server, Shield, ShieldAlert } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, CartesianGrid } from 'recharts';
+import { Layers, ShieldCheck, Zap, Server, Shield, ShieldAlert, ChevronRight } from 'lucide-react';
 
 const ICON_MAP = {
   server: Server,
@@ -87,7 +87,10 @@ export default function PlansView() {
 
               <div className="mt-6">
                 <button 
-                  onClick={() => alert(`Configuring details for plan ${plan.name} (Slug: ${plan.slug})`)}
+                  onClick={() => {
+                    console.error(`[PlansView] Missing Endpoint: POST /v1/admin/plans/${plan._id || plan.slug}/limits`);
+                    alert('Endpoint Not Found');
+                  }}
                   className="w-full h-8 flex items-center justify-center gap-1 text-[11px] font-bold rounded-lg border border-border hover:bg-secondary text-muted-foreground hover:text-foreground transition-all duration-150"
                 >
                   Configure Limits
@@ -167,7 +170,10 @@ export default function PlansView() {
 
           <div className="mt-6 border-t border-border pt-4">
             <button 
-              onClick={() => alert('New plan creation form is opened.')}
+              onClick={() => {
+                console.error('[PlansView] Missing Endpoint: POST /v1/admin/plans/new');
+                alert('Endpoint Not Found');
+              }}
               className="w-full h-9 bg-primary hover:bg-primary/95 text-primary-foreground text-xs font-bold rounded-lg transition-colors flex items-center justify-center"
             >
               Create New Plan Tier

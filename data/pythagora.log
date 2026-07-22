@@ -37,3 +37,42 @@ Stack: Canceled: Canceled
 Extra context: {
   "message": "Canceled"
 }
+2026-07-22T05:37:58.249Z INFO Is remote: false
+2026-07-22T05:37:58.275Z INFO Starting Local. Installation path: c:\Users\amarg\OneDrive\Desktop\fun-res
+2026-07-22T05:37:58.292Z INFO [MainProvider] Creating new MainProvider instance...
+2026-07-22T05:37:58.295Z INFO [TabsManager] Code view listener set up at initialization
+2026-07-22T05:37:58.298Z INFO Installation path exists: c:\Users\amarg\OneDrive\Desktop\fun-res
+2026-07-22T05:37:58.299Z INFO Initializing database with URL: file:c:\Users\amarg\OneDrive\Desktop\fun-res\pythagora-core\data\database\pythagora.db
+2026-07-22T05:37:58.302Z INFO Database file exists, skipping prisma generate/push for faster startup
+2026-07-22T05:37:58.304Z INFO Database initialized successfully
+2026-07-22T05:37:58.305Z INFO [Migration] Checking for database migration...
+2026-07-22T05:37:59.485Z INFO [Migration] No migration needed
+2026-07-22T05:38:11.931Z INFO Closing entire Pythagora extension...
+2026-07-22T05:38:11.938Z ERROR Error closing extension
+Error: Canceled
+Stack: Canceled: Canceled
+	at new Ox (file:///c:/Users/amarg/AppData/Local/Programs/Microsoft%20VS%20Code/8a7abeba6e/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:435:152502)
+	at i._remoteCall (file:///c:/Users/amarg/AppData/Local/Programs/Microsoft%20VS%20Code/8a7abeba6e/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:435:158554)
+	at r.<computed>.s.charCodeAt.r.<computed> (file:///c:/Users/amarg/AppData/Local/Programs/Microsoft%20VS%20Code/8a7abeba6e/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:435:155349)
+	at Gg._doExecuteCommand (file:///c:/Users/amarg/AppData/Local/Programs/Microsoft%20VS%20Code/8a7abeba6e/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:535:48252)
+	at Gg.executeCommand (file:///c:/Users/amarg/AppData/Local/Programs/Microsoft%20VS%20Code/8a7abeba6e/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:535:47699)
+	at Object.executeCommand (file:///c:/Users/amarg/AppData/Local/Programs/Microsoft%20VS%20Code/8a7abeba6e/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:673:138414)
+	at closeEntirePythagoraExtension (c:\Users\amarg\.vscode\extensions\pythagoratechnologies.pythagora-vs-code-2.6.19\out\extension.js:542:31)
+	at Object.deactivate (c:\Users\amarg\.vscode\extensions\pythagoratechnologies.pythagora-vs-code-2.6.19\out\extension.js:409:15)
+	at u_._deactivate (file:///c:/Users/amarg/AppData/Local/Programs/Microsoft%20VS%20Code/8a7abeba6e/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:539:14930)
+	at file:///c:/Users/amarg/AppData/Local/Programs/Microsoft%20VS%20Code/8a7abeba6e/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:539:12457
+	at Array.map (<anonymous>)
+	at u_._deactivateAll (file:///c:/Users/amarg/AppData/Local/Programs/Microsoft%20VS%20Code/8a7abeba6e/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:539:12445)
+	at u_.terminate (file:///c:/Users/amarg/AppData/Local/Programs/Microsoft%20VS%20Code/8a7abeba6e/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:539:12796)
+	at i.terminate (file:///c:/Users/amarg/AppData/Local/Programs/Microsoft%20VS%20Code/8a7abeba6e/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:541:1072)
+	at la (file:///c:/Users/amarg/AppData/Local/Programs/Microsoft%20VS%20Code/8a7abeba6e/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:852:11797)
+	at _p.value (file:///c:/Users/amarg/AppData/Local/Programs/Microsoft%20VS%20Code/8a7abeba6e/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:852:9939)
+	at T._deliver (file:///c:/Users/amarg/AppData/Local/Programs/Microsoft%20VS%20Code/8a7abeba6e/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:431:3244)
+	at T.fire (file:///c:/Users/amarg/AppData/Local/Programs/Microsoft%20VS%20Code/8a7abeba6e/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:431:3562)
+	at gs.fire (file:///c:/Users/amarg/AppData/Local/Programs/Microsoft%20VS%20Code/8a7abeba6e/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:433:8509)
+	at MessagePortMain.<anonymous> (file:///c:/Users/amarg/AppData/Local/Programs/Microsoft%20VS%20Code/8a7abeba6e/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:852:8171)
+	at MessagePortMain.emit (node:events:509:28)
+	at Object.emit (node:electron/js2c/utility_init:2:2934)
+Extra context: {
+  "message": "Canceled"
+}

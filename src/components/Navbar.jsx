@@ -4,8 +4,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { setTheme, setActiveView, setSearchQuery } from '@/store/uiSlice';
 import { updateProfile } from '@/store/adminSlice';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { authApi } from '@/services/auth.api';
+import { notificationsApi } from '@/services/notifications.api';
 import { 
   Search, 
   Bell, 
@@ -21,6 +22,7 @@ import {
 
 export default function Navbar() {
   const dispatch = useDispatch();
+  const queryClient = useQueryClient();
   const { theme, searchQuery } = useSelector((state) => state.ui);
   const { profile } = useSelector((state) => state.admin);
 
@@ -61,18 +63,42 @@ export default function Navbar() {
     }
   }, [dbProfile, dispatch]);
 
-  // TODO: Notifications API endpoint is not supported by the original Express backend routes.
-  // Never replace missing APIs with fake data. Display empty state.
-  const notifications = [];
-  const unreadCount = 0;
+  // Fetch real notifications using React Query
+  const { data: dbNotifications = [] } = useQuery({
+    queryKey: ['notificationsList'],
+    queryFn: () => notificationsApi.getNotifications(),
+    refetchInterval: 15000 // poll notifications every 15s
+  });
 
-  const markReadMutation = {
-    mutate: () => {}
-  };
+  const notifications = dbNotifications.map(notif => ({
+    id: notif._id,
+    text: notif.title ? `${notif.title}: ${notif.body}` : notif.body,
+    read: notif.read,
+    time: notif.createdAt ? new Date(notif.createdAt).toLocaleDateString() + ' ' + new Date(notif.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''
+  }));
 
-  const markAllReadMutation = {
-    mutate: () => {}
-  };
+  const unreadCount = notifications.filter(n => !n.read).length;
+
+  const markReadMutation = useMutation({
+    mutationFn: (id) => notificationsApi.markAsRead(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['notificationsList']);
+    }
+  });
+
+  const markAllReadMutation = useMutation({
+    mutationFn: async () => {
+      // Loop over unread and mark them read since backend lacks a bulk read route, or clear all.
+      // Wait, backend has DELETE /api/notifications which clears all.
+      // But for marking read, we mark individual ones. Let's do it or call notificationsApi.clearAll() if needed.
+      // Actually we can just run clearAll or map individual markAsRead.
+      const unreads = dbNotifications.filter(n => !n.read);
+      await Promise.all(unreads.map(n => notificationsApi.markAsRead(n._id)));
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['notificationsList']);
+    }
+  });
 
   const toggleTheme = () => {
     dispatch(setTheme(theme === 'dark' ? 'light' : 'dark'));

@@ -23,7 +23,8 @@ export const usersApi = {
       name: u.fullName,
       email: u.email,
       subscription: u.subscription?.plan === 'pro' ? 'Pro Plan' : 'Free Tier',
-      status: u.subscription?.status === 'active' ? 'Active' : (u.subscription?.status === 'pending' ? 'Pending' : 'Suspended'),
+      status: u.accountStatus === 'suspended' ? 'Suspended' : (u.subscription?.status === 'active' ? 'Active' : 'Pending'),
+      accountStatus: u.accountStatus || 'active',
       joinedDate: u.createdAt ? new Date(u.createdAt).toISOString().split('T')[0] : '',
       avatar: u.fullName ? u.fullName.split(' ').map(n => n[0]).join('').toUpperCase() : 'U'
     }));
@@ -46,7 +47,8 @@ export const usersApi = {
         name: user.fullName,
         email: user.email,
         subscription: user.subscription?.plan === 'pro' ? 'Pro Plan' : 'Free Tier',
-        status: user.subscription?.status === 'active' ? 'Active' : (user.subscription?.status === 'pending' ? 'Pending' : 'Suspended'),
+        status: user.accountStatus === 'suspended' ? 'Suspended' : (user.subscription?.status === 'active' ? 'Active' : 'Pending'),
+        accountStatus: user.accountStatus || 'active',
         joinedDate: user.createdAt ? new Date(user.createdAt).toISOString().split('T')[0] : '',
         avatar: user.fullName ? user.fullName.split(' ').map(n => n[0]).join('').toUpperCase() : 'U'
       },
@@ -57,6 +59,11 @@ export const usersApi = {
         date: p.paidAt ? new Date(p.paidAt).toLocaleString() : ''
       }))
     };
-  }
+  },
+
+  toggleStatus: async (id) => {
+    const response = await apiClient.patch(`/v1/admin/users/${id}/status`);
+    return response.data.data;
+  },
 };
 export default usersApi;

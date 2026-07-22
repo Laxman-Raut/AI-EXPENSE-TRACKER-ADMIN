@@ -42,6 +42,11 @@ export const subscriptionsApi = {
   extend: async (id, durationDays, note) => {
     const response = await apiClient.patch(`/v1/admin/subscriptions/${id}/extend`, { durationDays, note });
     return response.data.data;
-  }
+  },
+
+  getMetrics: async () => {
+    const response = await apiClient.get('/v1/admin/subscriptions/metrics');
+    return response.data.data;
+  },
 };
 export default subscriptionsApi;

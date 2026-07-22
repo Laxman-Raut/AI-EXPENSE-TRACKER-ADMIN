@@ -86,6 +86,15 @@ export default function UsersView() {
     onError: (err) => alert(err.message || 'Failed to activate subscription.')
   });
 
+  const toggleStatusMutation = useMutation({
+    mutationFn: (userId) => usersApi.toggleStatus(userId),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries(['usersList']);
+      alert(`Account ${data.accountStatus === 'suspended' ? 'suspended' : 'activated'} successfully.`);
+    },
+    onError: (err) => alert(err.message || 'Failed to toggle user status.')
+  });
+
   // Fetch users with filters
   const { data: usersResponse, isLoading, error, refetch } = useQuery({
     queryKey: ['usersList', { search, statusFilter, subFilter, page }],
@@ -140,11 +149,13 @@ export default function UsersView() {
     if (action === 'view') {
       setSelectedUser(user);
     } else if (action === 'toggle_status') {
-      const nextStatus = user.status === 'Active' ? 'Suspended' : 'Active';
-      alert(`User status for ${user.name} changed to ${nextStatus}.`);
-      refetch();
+      const label = user.status === 'Suspended' ? 'activate' : 'suspend';
+      if (window.confirm(`Are you sure you want to ${label} ${user.name}'s account?`)) {
+        toggleStatusMutation.mutate(user.id);
+      }
     } else if (action === 'reset_pass') {
-      alert(`Password reset link sent to ${user.email}.`);
+      console.error(`[UsersView] Missing Endpoint: POST /v1/admin/users/${user.id}/reset-password`);
+      alert('Endpoint Not Found');
     }
   };
 

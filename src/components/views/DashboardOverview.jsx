@@ -14,7 +14,8 @@ import {
   CheckCircle,
   Clock,
   ExternalLink,
-  ChevronRight
+  ChevronRight,
+  ShieldAlert
 } from 'lucide-react';
 import { 
   AreaChart, 
@@ -267,7 +268,7 @@ export default function DashboardOverview({ onViewChange }) {
               {/* Legends */}
               <div className="mt-4 w-full grid grid-cols-3 gap-2">
                 {pie.map((entry, index) => (
-                  <div key={entry.name} className="flex flex-col items-center text-center">
+                  <div key={`${entry.name}-${index}`} className="flex flex-col items-center text-center">
                     <span className="flex items-center gap-1.5 text-[10px] font-semibold text-muted-foreground">
                       <span className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: entry.color }} />
                       {entry.name.split(' ')[0]}
