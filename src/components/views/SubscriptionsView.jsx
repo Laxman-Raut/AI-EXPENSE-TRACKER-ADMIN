@@ -187,13 +187,13 @@ export default function SubscriptionsView() {
         </div>
       )}
 
-      {/* Subscription Trend Chart — Real 6-month data */}
+      {/* Subscription Trend Chart — Real 30-day data */}
       <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
         <div className="border-b border-border pb-4 mb-4 flex items-start justify-between">
           <div>
             <h3 className="text-sm font-bold text-foreground">Subscription Growth & Churn Trend</h3>
             <p className="text-xs text-muted-foreground">
-              6-month comparison of active paid subscribers vs. churn events from the database.
+              30-day comparison of active paid subscribers vs. churn events from the database.
             </p>
           </div>
           {metricsLoading && <div className="h-4 w-20 rounded bg-muted animate-pulse" />}
@@ -222,7 +222,7 @@ export default function SubscriptionsView() {
                 />
                 <Legend verticalAlign="top" height={36} wrapperStyle={{ fontSize: '11px', fontWeight: '600' }} />
                 <Bar dataKey="Active"  fill="#10b981" radius={[4, 4, 0, 0]} name="Active Subscribers" />
-                <Bar dataKey="Churned" fill="#ef4444" radius={[4, 4, 0, 0]} name="Churned This Month" />
+                <Bar dataKey="Churned" fill="#ef4444" radius={[4, 4, 0, 0]} name="Churned" />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -252,7 +252,7 @@ export default function SubscriptionsView() {
               onChange={(e) => { setPlanFilter(e.target.value); setPage(1); }}
               className="h-8 px-2.5 text-xs rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
             >
-              {['All', 'Free Tier', 'Pro Plan'].map(p => (
+              {['All', 'Pro Plan'].map(p => (
                 <option key={p} value={p}>{p}</option>
               ))}
             </select>
@@ -328,7 +328,14 @@ export default function SubscriptionsView() {
                         <td className="px-4 py-3 text-muted-foreground">{startDate}</td>
                         <td className="px-4 py-3 text-muted-foreground">{endDate}</td>
                         <td className="px-4 py-3">
-                          <span className="capitalize text-muted-foreground">{sub.subscription?.provider || '—'}</span>
+                          <div className="flex flex-col gap-1 items-start">
+                            <span className="capitalize text-muted-foreground">{sub.subscription?.provider || '—'}</span>
+                            {sub.subscription?.note && (
+                              <span className="text-[9px] font-bold px-1.5 py-0.5 bg-amber-500/10 text-amber-600 rounded border border-amber-500/20">
+                                {sub.subscription.note}
+                              </span>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     );
