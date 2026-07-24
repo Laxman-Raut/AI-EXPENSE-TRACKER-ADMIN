@@ -9,15 +9,15 @@ export const analyticsApi = {
     const growth = charts.userGrowthTrend?.map(t => ({
       date: t._id,
       Signups: t.users,
-      ActiveUsers: t.users // Use growth users count directly
+      ActiveUsers: t.users
     })) || [];
 
-    // Adapt subscription distribution: backend returns {_id: "plan_slug", users: count}
-    // We map this for compatibility with the view charts
+    // Adapt subscription distribution for backward-compat
+    // Real trend data comes from subscriptionsApi.getMetrics().monthlyTrend
     const subscriptions = charts.subscriptionDistribution?.map(d => ({
-      name: d._id === 'pro' ? 'Pro Plan' : 'Free Tier',
+      name: d._id === 'pro' ? 'Pro Plan' : (d._id === 'basic' ? 'Basic Plan' : 'Free Tier'),
       Active: d.users,
-      Churned: 0 // TODO: Churn values are not tracked in the current dashboard database schema
+      Churned: 0
     })) || [];
 
     return {
@@ -27,3 +27,4 @@ export const analyticsApi = {
   }
 };
 export default analyticsApi;
+

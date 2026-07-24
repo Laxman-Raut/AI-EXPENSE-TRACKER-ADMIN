@@ -24,10 +24,25 @@ const COLOR_MAP = {
   enterprise: 'text-amber-500 bg-amber-500/10'
 };
 
+const EMPTY_CREATE_FORM = {
+  name: '',
+  slug: '',
+  description: '',
+  price: '',
+  billingCycle: 'monthly',
+  durationDays: '30',
+  icon: 'crown',
+  status: 'draft',
+  features: '',
+  _slugEdited: false,
+};
+
 export default function PlansView() {
   const queryClient = useQueryClient();
   const [selectedPlan, setSelectedPlan] = useState(null);
-  
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [createForm, setCreateForm] = useState(EMPTY_CREATE_FORM);
+
   // Form states for configuration
   const [chatbotLimit, setChatbotLimit] = useState(0);
   const [receiptScannerLimit, setReceiptScannerLimit] = useState(0);
@@ -52,6 +67,20 @@ export default function PlansView() {
       setSelectedPlan(null);
     },
     onError: (err) => alert(err.message || 'Failed to update plan limits.')
+  });
+
+  const createPlanMutation = useMutation({
+    mutationFn: (data) => plansApi.createPlan(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['plansList']);
+      alert('Plan created successfully! Mobile app users will now see this plan.');
+      setIsCreateModalOpen(false);
+      setCreateForm(EMPTY_CREATE_FORM);
+    },
+    onError: (err) => {
+      const msg = err?.response?.data?.message || err.message || 'Failed to create plan.';
+      alert(`Error: ${msg}`);
+    }
   });
 
   const deletePlanMutation = useMutation({
@@ -83,6 +112,45 @@ export default function PlansView() {
         gracePeriodDays
       }
     });
+  };
+
+  const handleCreateFormChange = (e) => {
+    const { name, value } = e.target;
+    setCreateForm((prev) => ({
+      ...prev,
+      [name]: value,
+      ...(name === 'name' && !prev._slugEdited
+        ? { slug: value.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') }
+        : {}),
+    }));
+  };
+
+  const handleSlugChange = (e) => {
+    setCreateForm((prev) => ({
+      ...prev,
+      slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''),
+      _slugEdited: true,
+    }));
+  };
+
+  const handleCreatePlan = (e) => {
+    e.preventDefault();
+    const featuresArray = createForm.features
+      .split('\n')
+      .map((f) => f.trim())
+      .filter(Boolean);
+    const payload = {
+      name: createForm.name.trim(),
+      slug: createForm.slug.trim(),
+      description: createForm.description.trim(),
+      price: Number(createForm.price),
+      billingCycle: createForm.billingCycle,
+      durationDays: Number(createForm.durationDays),
+      icon: createForm.icon,
+      status: createForm.status,
+      features: featuresArray,
+    };
+    createPlanMutation.mutate(payload);
   };
 
   const chartData = summary?.pie || [];
@@ -260,10 +328,7 @@ export default function PlansView() {
 
           <div className="mt-6 border-t border-border pt-4">
             <button 
-              onClick={() => {
-                console.error('[PlansView] Missing Endpoint: POST /v1/admin/plans/new');
-                alert('Endpoint Not Found');
-              }}
+              onClick={() => setIsCreateModalOpen(true)}
               className="w-full h-9 bg-primary hover:bg-primary/95 text-primary-foreground text-xs font-bold rounded-lg transition-colors flex items-center justify-center"
             >
               Create New Plan Tier
@@ -350,6 +415,167 @@ export default function PlansView() {
             </div>
           </form>
         )}
+      </Dialog>
+      
+      {/* Create Plan Dialog */}
+      <Dialog
+        isOpen={isCreateModalOpen}
+        onClose={() => { setIsCreateModalOpen(false); setCreateForm(EMPTY_CREATE_FORM); }}
+        title="Create New Plan Tier"
+      >
+        <form onSubmit={handleCreatePlan} className="space-y-4 text-xs">
+          <div className="grid grid-cols-2 gap-3">
+            {/* Plan Name */}
+            <div className="flex flex-col gap-1.5 col-span-2">
+              <label className="font-semibold text-muted-foreground">Plan Name <span className="text-rose-500">*</span></label>
+              <input
+                type="text"
+                name="name"
+                value={createForm.name}
+                onChange={handleCreateFormChange}
+                placeholder="e.g. Pro Plan"
+                className="h-9 px-3 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                required
+              />
+            </div>
+
+            {/* Slug */}
+            <div className="flex flex-col gap-1.5 col-span-2">
+              <label className="font-semibold text-muted-foreground">Slug (unique ID) <span className="text-rose-500">*</span></label>
+              <input
+                type="text"
+                name="slug"
+                value={createForm.slug}
+                onChange={handleSlugChange}
+                placeholder="e.g. pro"
+                className="h-9 px-3 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-primary font-mono"
+                required
+              />
+              <span className="text-[10px] text-muted-foreground">Lowercase, no spaces. Used to identify plan internally (e.g. "pro", "basic").</span>
+            </div>
+
+            {/* Price */}
+            <div className="flex flex-col gap-1.5">
+              <label className="font-semibold text-muted-foreground">Price ($) <span className="text-rose-500">*</span></label>
+              <input
+                type="number"
+                name="price"
+                value={createForm.price}
+                onChange={handleCreateFormChange}
+                placeholder="0"
+                min="0"
+                className="h-9 px-3 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                required
+              />
+            </div>
+
+            {/* Billing Cycle */}
+            <div className="flex flex-col gap-1.5">
+              <label className="font-semibold text-muted-foreground">Billing Cycle <span className="text-rose-500">*</span></label>
+              <select
+                name="billingCycle"
+                value={createForm.billingCycle}
+                onChange={handleCreateFormChange}
+                className="h-9 px-3 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                required
+              >
+                <option value="monthly">Monthly</option>
+                <option value="yearly">Yearly</option>
+                <option value="lifetime">Lifetime</option>
+              </select>
+            </div>
+
+            {/* Duration Days */}
+            <div className="flex flex-col gap-1.5">
+              <label className="font-semibold text-muted-foreground">Duration (Days) <span className="text-rose-500">*</span></label>
+              <input
+                type="number"
+                name="durationDays"
+                value={createForm.durationDays}
+                onChange={handleCreateFormChange}
+                min="1"
+                className="h-9 px-3 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                required
+              />
+            </div>
+
+            {/* Icon */}
+            <div className="flex flex-col gap-1.5">
+              <label className="font-semibold text-muted-foreground">Icon</label>
+              <select
+                name="icon"
+                value={createForm.icon}
+                onChange={handleCreateFormChange}
+                className="h-9 px-3 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+              >
+                <option value="crown">Crown</option>
+                <option value="zap">Zap</option>
+                <option value="layers">Layers</option>
+                <option value="server">Server</option>
+                <option value="shield">Shield</option>
+              </select>
+            </div>
+
+            {/* Status */}
+            <div className="flex flex-col gap-1.5">
+              <label className="font-semibold text-muted-foreground">Initial Status</label>
+              <select
+                name="status"
+                value={createForm.status}
+                onChange={handleCreateFormChange}
+                className="h-9 px-3 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+              >
+                <option value="draft">Draft (hidden from users)</option>
+                <option value="active">Active (visible to mobile users)</option>
+                <option value="inactive">Inactive</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Description */}
+          <div className="flex flex-col gap-1.5">
+            <label className="font-semibold text-muted-foreground">Description</label>
+            <textarea
+              name="description"
+              value={createForm.description}
+              onChange={handleCreateFormChange}
+              placeholder="Brief description shown to users on the pricing page..."
+              rows={2}
+              className="px-3 py-2 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none"
+            />
+          </div>
+
+          {/* Features */}
+          <div className="flex flex-col gap-1.5">
+            <label className="font-semibold text-muted-foreground">Features (one per line)</label>
+            <textarea
+              name="features"
+              value={createForm.features}
+              onChange={handleCreateFormChange}
+              placeholder={"Unlimited receipt scans\nAI chatbot access\nPriority support"}
+              rows={4}
+              className="px-3 py-2 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none font-mono"
+            />
+            <span className="text-[10px] text-muted-foreground">Each line becomes a feature bullet shown to mobile app users.</span>
+          </div>
+
+          <div className="border-t border-border pt-4 mt-2 flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => { setIsCreateModalOpen(false); setCreateForm(EMPTY_CREATE_FORM); }}
+              className="px-3.5 py-1.5 rounded-lg border border-border hover:bg-secondary text-muted-foreground hover:text-foreground font-semibold transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={createPlanMutation.isPending}
+              className="px-4 py-1.5 rounded-lg bg-primary hover:bg-primary/95 text-primary-foreground font-semibold transition-colors disabled:opacity-50"
+            >
+              {createPlanMutation.isPending ? 'Creating...' : 'Create Plan'}
+            </button>
+          </div>
+        </form>
       </Dialog>
     </div>
   );
