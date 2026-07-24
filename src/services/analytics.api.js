@@ -3,7 +3,7 @@ import apiClient from '@/lib/api';
 export const analyticsApi = {
   getCharts: async () => {
     const response = await apiClient.get('/v1/admin/dashboard');
-    const { charts } = response.data.data;
+    const { charts, advancedMetrics } = response.data.data;
 
     // Adapt user growth trend: backend returns {_id: "YYYY-MM-DD", users: count}
     const growth = charts.userGrowthTrend?.map(t => ({
@@ -22,7 +22,8 @@ export const analyticsApi = {
 
     return {
       growth,
-      subscriptions
+      subscriptions,
+      advancedMetrics
     };
   }
 };

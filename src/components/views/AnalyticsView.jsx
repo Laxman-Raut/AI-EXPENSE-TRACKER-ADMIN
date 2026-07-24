@@ -60,25 +60,31 @@ export default function AnalyticsView() {
 
       {/* Stats Quick Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-        <div className="rounded-xl border border-border bg-card p-5 shadow-sm opacity-65">
+        <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
           <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Active Rate</span>
-          <h4 className="text-lg font-bold mt-2 text-muted-foreground">TODO</h4>
+          <h4 className="text-xl font-bold mt-2 text-foreground">
+            {isLoading ? 'Loading...' : (chartDataResponse?.advancedMetrics?.activeRate || '0.0%')}
+          </h4>
           <p className="text-[10px] font-medium text-muted-foreground mt-2">
-            No backend session tracker
+            Based on active 30-day user visits
           </p>
         </div>
-        <div className="rounded-xl border border-border bg-card p-5 shadow-sm opacity-65">
+        <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
           <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Average Session Duration</span>
-          <h4 className="text-lg font-bold mt-2 text-muted-foreground">TODO</h4>
+          <h4 className="text-xl font-bold mt-2 text-foreground">
+            {isLoading ? 'Loading...' : (chartDataResponse?.advancedMetrics?.avgSessionDuration || '0m 0s')}
+          </h4>
           <p className="text-[10px] font-medium text-muted-foreground mt-2">
-            No backend session tracker
+            Calculated via transaction frequency
           </p>
         </div>
-        <div className="rounded-xl border border-border bg-card p-5 shadow-sm opacity-65">
+        <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
           <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Retention (D30)</span>
-          <h4 className="text-lg font-bold mt-2 text-muted-foreground">TODO</h4>
+          <h4 className="text-xl font-bold mt-2 text-foreground">
+            {isLoading ? 'Loading...' : (chartDataResponse?.advancedMetrics?.d30Retention || '0.0%')}
+          </h4>
           <p className="text-[10px] font-medium text-muted-foreground mt-2">
-            No backend cohort API
+            30-day cohort retention rate
           </p>
         </div>
       </div>
