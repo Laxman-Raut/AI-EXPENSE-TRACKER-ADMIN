@@ -1,10 +1,10 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { aiUsageApi } from '@/services/aiUsage.api';
 import { StatCardSkeleton, ChartSkeleton } from '../ui/Skeleton';
-import { ShieldAlert, MessageSquare, ScanLine, Mic, Zap, Users } from 'lucide-react';
+import { ShieldAlert, MessageSquare, ScanLine, Mic, Zap, Users, Filter, RotateCcw } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend,
@@ -15,6 +15,13 @@ const PALETTE = ['#8b5cf6', '#06b6d4', '#f59e0b'];
 
 // ─── Helpers ────────────────────────────────────────────────────
 const fmtDate = (d) => new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' });
+
+const getTodayString = () => new Date().toISOString().split('T')[0];
+const getCurrentMonthString = () => {
+  const d = new Date();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  return `${d.getFullYear()}-${month}`;
+};
 
 // ─── Sub-components ──────────────────────────────────────────────
 function StatCard({ icon: Icon, label, value, color }) {
@@ -47,15 +54,35 @@ function CustomTooltip({ active, payload, label }) {
 
 // ─── Main Component ──────────────────────────────────────────────
 export default function AiUsageView() {
+  const [filterType, setFilterType] = useState('all'); // 'all' | 'day' | 'month'
+  const [selectedDate, setSelectedDate] = useState(getTodayString());
+  const [selectedMonth, setSelectedMonth] = useState(getCurrentMonthString());
+
+  const queryParams = useMemo(() => {
+    if (filterType === 'day' && selectedDate) {
+      return { date: selectedDate };
+    }
+    if (filterType === 'month' && selectedMonth) {
+      return { month: selectedMonth };
+    }
+    return {};
+  }, [filterType, selectedDate, selectedMonth]);
+
   const { data, isLoading, error, refetch } = useQuery({
-    queryKey: ['adminAiUsage'],
-    queryFn:  aiUsageApi.getAiUsage,
+    queryKey: ['adminAiUsage', queryParams],
+    queryFn: () => aiUsageApi.getAiUsage(queryParams),
   });
 
-  const summary     = data?.summary     || {};
+  const summary      = data?.summary      || {};
   const distribution = data?.distribution || [];
-  const dailyTrend  = data?.dailyTrend  || [];
-  const topUsers    = data?.topUsers    || [];
+  const dailyTrend   = data?.dailyTrend   || [];
+  const topUsers     = data?.topUsers     || [];
+
+  const handleResetFilter = () => {
+    setFilterType('all');
+    setSelectedDate(getTodayString());
+    setSelectedMonth(getCurrentMonthString());
+  };
 
   // ─── Error ──────────────────────────────────────────────
   if (error) {
@@ -80,12 +107,69 @@ export default function AiUsageView() {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
-      {/* Header */}
-      <div className="flex flex-col gap-1 border-b border-border pb-5">
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">AI Integration Analytics</h1>
-        <p className="text-sm text-muted-foreground">
-          Real-time AI feature usage across Chatbot, Receipt Scanner, and Voice Scanner.
-        </p>
+      {/* Header with Filter Controls */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-5">
+        <div className="space-y-1">
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">AI Integration Analytics</h1>
+          <p className="text-sm text-muted-foreground">
+            Real-time AI feature usage across Chatbot, Receipt Scanner, and Voice Scanner.
+          </p>
+        </div>
+
+        {/* Date Filter Bar */}
+        <div className="flex items-center flex-wrap gap-2.5 bg-card border border-border p-2 rounded-xl shadow-sm">
+          <div className="flex items-center gap-1.5 px-2 text-xs font-semibold text-muted-foreground">
+            <Filter size={14} className="text-primary" />
+            <span>Filter:</span>
+          </div>
+
+          {/* Filter Type Selector */}
+          <select
+            value={filterType}
+            onChange={(e) => setFilterType(e.target.value)}
+            className="h-8 bg-background border border-border text-foreground text-xs font-semibold rounded-lg px-2.5 outline-none focus:ring-1 focus:ring-primary"
+          >
+            <option value="all">All Time</option>
+            <option value="day">Specific Day</option>
+            <option value="month">Specific Month</option>
+          </select>
+
+          {/* Day Picker */}
+          {filterType === 'day' && (
+            <div className="flex items-center gap-1">
+              <input
+                type="date"
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                className="h-8 bg-background border border-border text-foreground text-xs font-semibold rounded-lg px-2.5 outline-none focus:ring-1 focus:ring-primary"
+              />
+            </div>
+          )}
+
+          {/* Month Picker */}
+          {filterType === 'month' && (
+            <div className="flex items-center gap-1">
+              <input
+                type="month"
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(e.target.value)}
+                className="h-8 bg-background border border-border text-foreground text-xs font-semibold rounded-lg px-2.5 outline-none focus:ring-1 focus:ring-primary"
+              />
+            </div>
+          )}
+
+          {/* Reset Filter Button */}
+          {filterType !== 'all' && (
+            <button
+              onClick={handleResetFilter}
+              title="Reset Filter"
+              className="h-8 px-2.5 bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground text-xs font-semibold rounded-lg transition-colors flex items-center gap-1"
+            >
+              <RotateCcw size={13} />
+              <span>Reset</span>
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Summary Cards */}
@@ -107,12 +191,17 @@ export default function AiUsageView() {
 
         {/* Daily Chatbot Trend */}
         <div className="md:col-span-2 rounded-xl border border-border bg-card p-5 shadow-sm">
-          <h2 className="text-sm font-bold text-foreground mb-1">Chatbot Query Trend (Last 30 Days)</h2>
+          <div className="flex items-center justify-between mb-1">
+            <h2 className="text-sm font-bold text-foreground">Chatbot Query Trend</h2>
+            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-violet-500/10 text-violet-400 border border-violet-500/20">
+              {filterType === 'day' ? `Day: ${selectedDate}` : filterType === 'month' ? `Month: ${selectedMonth}` : 'Last 30 Days'}
+            </span>
+          </div>
           <p className="text-[11px] text-muted-foreground mb-4">Daily count of user messages sent to the AI chatbot.</p>
           {isLoading ? (
             <ChartSkeleton />
           ) : dailyTrend.length === 0 ? (
-            <div className="h-[200px] flex items-center justify-center text-muted-foreground text-xs">No data for last 30 days.</div>
+            <div className="h-[200px] flex items-center justify-center text-muted-foreground text-xs">No data recorded for this selection.</div>
           ) : (
             <ResponsiveContainer width="100%" height={220}>
               <BarChart data={dailyTrend} margin={{ top: 4, right: 4, left: -28, bottom: 0 }}>
@@ -202,14 +291,21 @@ export default function AiUsageView() {
 
       {/* Top Power Users */}
       <div className="rounded-xl border border-border bg-card overflow-hidden shadow-sm">
-        <div className="border-b border-border px-5 py-4">
-          <h2 className="text-sm font-bold text-foreground">Top AI Power Users</h2>
-          <p className="text-[11px] text-muted-foreground mt-0.5">Users ranked by total AI feature usage.</p>
+        <div className="border-b border-border px-5 py-4 flex items-center justify-between">
+          <div>
+            <h2 className="text-sm font-bold text-foreground">Top AI Power Users</h2>
+            <p className="text-[11px] text-muted-foreground mt-0.5">Users ranked by total AI feature usage.</p>
+          </div>
+          {filterType !== 'all' && (
+            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
+              Filtered ({filterType === 'day' ? selectedDate : selectedMonth})
+            </span>
+          )}
         </div>
         {isLoading ? (
           <div className="p-5"><StatCardSkeleton /></div>
         ) : topUsers.length === 0 ? (
-          <div className="p-12 text-center text-muted-foreground text-xs">No AI usage data found.</div>
+          <div className="p-12 text-center text-muted-foreground text-xs">No AI usage data found for this selection.</div>
         ) : (
           <table className="w-full text-xs text-left border-collapse">
             <thead>
