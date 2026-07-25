@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { aiUsageApi } from '@/services/aiUsage.api';
 import { StatCardSkeleton, ChartSkeleton } from '../ui/Skeleton';
-import { ShieldAlert, MessageSquare, ScanLine, Mic, Zap, Users, Filter, RotateCcw } from 'lucide-react';
+import { ShieldAlert, MessageSquare, ScanLine, Mic, Zap, Users, Calendar as CalendarIcon, Filter, RotateCcw, CalendarDays, CalendarRange } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend,
@@ -58,6 +58,9 @@ export default function AiUsageView() {
   const [selectedDate, setSelectedDate] = useState(getTodayString());
   const [selectedMonth, setSelectedMonth] = useState(getCurrentMonthString());
 
+  const dateInputRef = useRef(null);
+  const monthInputRef = useRef(null);
+
   const queryParams = useMemo(() => {
     if (filterType === 'day' && selectedDate) {
       return { date: selectedDate };
@@ -77,6 +80,31 @@ export default function AiUsageView() {
   const distribution = data?.distribution || [];
   const dailyTrend   = data?.dailyTrend   || [];
   const topUsers     = data?.topUsers     || [];
+
+  const openCalendar = () => {
+    try {
+      dateInputRef.current?.showPicker?.();
+    } catch (e) {
+      dateInputRef.current?.focus?.();
+    }
+  };
+
+  const openMonthPicker = () => {
+    try {
+      monthInputRef.current?.showPicker?.();
+    } catch (e) {
+      monthInputRef.current?.focus?.();
+    }
+  };
+
+  const handleFilterSelect = (type) => {
+    setFilterType(type);
+    if (type === 'day') {
+      setTimeout(openCalendar, 60);
+    } else if (type === 'month') {
+      setTimeout(openMonthPicker, 60);
+    }
+  };
 
   const handleResetFilter = () => {
     setFilterType('all');
@@ -107,8 +135,8 @@ export default function AiUsageView() {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
-      {/* Header with Filter Controls */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-5">
+      {/* Header with Interactive Filter Bar */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-border pb-5">
         <div className="space-y-1">
           <h1 className="text-2xl font-bold tracking-tight text-foreground">AI Integration Analytics</h1>
           <p className="text-sm text-muted-foreground">
@@ -116,54 +144,101 @@ export default function AiUsageView() {
           </p>
         </div>
 
-        {/* Date Filter Bar */}
-        <div className="flex items-center flex-wrap gap-2.5 bg-card border border-border p-2 rounded-xl shadow-sm">
-          <div className="flex items-center gap-1.5 px-2 text-xs font-semibold text-muted-foreground">
+        {/* Date / Month Interactive Filter Bar */}
+        <div className="flex items-center flex-wrap gap-2 bg-card border border-border p-1.5 rounded-xl shadow-sm">
+          <div className="flex items-center gap-1 px-2.5 text-xs font-semibold text-muted-foreground border-r border-border pr-3">
             <Filter size={14} className="text-primary" />
-            <span>Filter:</span>
+            <span>Timeframe:</span>
           </div>
 
-          {/* Filter Type Selector */}
-          <select
-            value={filterType}
-            onChange={(e) => setFilterType(e.target.value)}
-            className="h-8 bg-background border border-border text-foreground text-xs font-semibold rounded-lg px-2.5 outline-none focus:ring-1 focus:ring-primary"
+          {/* All Time Pill */}
+          <button
+            onClick={() => handleFilterSelect('all')}
+            className={`h-8 px-3 text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5 ${
+              filterType === 'all'
+                ? 'bg-primary text-primary-foreground shadow-sm'
+                : 'bg-background hover:bg-muted text-muted-foreground hover:text-foreground border border-border'
+            }`}
           >
-            <option value="all">All Time</option>
-            <option value="day">Specific Day</option>
-            <option value="month">Specific Month</option>
-          </select>
+            <span>All Time</span>
+          </button>
 
-          {/* Day Picker */}
+          {/* Specific Day Pill */}
+          <button
+            onClick={() => handleFilterSelect('day')}
+            className={`h-8 px-3 text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5 ${
+              filterType === 'day'
+                ? 'bg-primary text-primary-foreground shadow-sm'
+                : 'bg-background hover:bg-muted text-muted-foreground hover:text-foreground border border-border'
+            }`}
+          >
+            <CalendarDays size={14} />
+            <span>Specific Day</span>
+          </button>
+
+          {/* Specific Month Pill */}
+          <button
+            onClick={() => handleFilterSelect('month')}
+            className={`h-8 px-3 text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5 ${
+              filterType === 'month'
+                ? 'bg-primary text-primary-foreground shadow-sm'
+                : 'bg-background hover:bg-muted text-muted-foreground hover:text-foreground border border-border'
+            }`}
+          >
+            <CalendarRange size={14} />
+            <span>Specific Month</span>
+          </button>
+
+          {/* Specific Day Date Picker Overlay */}
           {filterType === 'day' && (
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1.5 bg-background border border-primary/50 rounded-lg px-2.5 h-8 animate-in fade-in zoom-in-95 duration-150">
               <input
+                ref={dateInputRef}
                 type="date"
                 value={selectedDate}
                 onChange={(e) => setSelectedDate(e.target.value)}
-                className="h-8 bg-background border border-border text-foreground text-xs font-semibold rounded-lg px-2.5 outline-none focus:ring-1 focus:ring-primary"
+                onClick={openCalendar}
+                className="bg-transparent text-foreground text-xs font-bold outline-none cursor-pointer"
               />
+              <button
+                type="button"
+                onClick={openCalendar}
+                title="Open Calendar"
+                className="text-primary hover:text-primary/80 transition-colors"
+              >
+                <CalendarIcon size={14} />
+              </button>
             </div>
           )}
 
-          {/* Month Picker */}
+          {/* Specific Month Picker Overlay */}
           {filterType === 'month' && (
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1.5 bg-background border border-primary/50 rounded-lg px-2.5 h-8 animate-in fade-in zoom-in-95 duration-150">
               <input
+                ref={monthInputRef}
                 type="month"
                 value={selectedMonth}
                 onChange={(e) => setSelectedMonth(e.target.value)}
-                className="h-8 bg-background border border-border text-foreground text-xs font-semibold rounded-lg px-2.5 outline-none focus:ring-1 focus:ring-primary"
+                onClick={openMonthPicker}
+                className="bg-transparent text-foreground text-xs font-bold outline-none cursor-pointer"
               />
+              <button
+                type="button"
+                onClick={openMonthPicker}
+                title="Open Month Picker"
+                className="text-primary hover:text-primary/80 transition-colors"
+              >
+                <CalendarIcon size={14} />
+              </button>
             </div>
           )}
 
-          {/* Reset Filter Button */}
+          {/* Reset Button */}
           {filterType !== 'all' && (
             <button
               onClick={handleResetFilter}
               title="Reset Filter"
-              className="h-8 px-2.5 bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground text-xs font-semibold rounded-lg transition-colors flex items-center gap-1"
+              className="h-8 px-2.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 text-xs font-semibold rounded-lg transition-colors flex items-center gap-1 border border-rose-500/20"
             >
               <RotateCcw size={13} />
               <span>Reset</span>
