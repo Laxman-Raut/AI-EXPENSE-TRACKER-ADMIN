@@ -32,7 +32,7 @@ const EMPTY_CREATE_FORM = {
   billingCycle: 'monthly',
   durationDays: '30',
   icon: 'crown',
-  status: 'draft',
+  status: 'active',
   features: '',
   _slugEdited: false,
 };
