@@ -6,7 +6,7 @@ import { plansApi } from '@/services/plans.api';
 import { dashboardApi } from '@/services/dashboard.api';
 import { ChartSkeleton } from '../ui/Skeleton';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, CartesianGrid } from 'recharts';
-import { Layers, ShieldCheck, Zap, Server, Shield, ShieldAlert, ChevronRight, Trash2, Settings } from 'lucide-react';
+import { Layers, ShieldCheck, Zap, Server, Shield, ShieldAlert, ChevronRight, Trash2, Settings, Pencil, Edit3 } from 'lucide-react';
 import Dialog from '../ui/Dialog';
 
 const ICON_MAP = {
@@ -42,6 +42,18 @@ export default function PlansView() {
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [createForm, setCreateForm] = useState(EMPTY_CREATE_FORM);
+
+  // Edit Plan & Price State
+  const [editingPlan, setEditingPlan] = useState(null);
+  const [editForm, setEditForm] = useState({
+    name: '',
+    price: '',
+    billingCycle: 'monthly',
+    durationDays: '30',
+    status: 'active',
+    description: '',
+    features: '',
+  });
 
   // Form states for configuration
   const [chatbotLimit, setChatbotLimit] = useState(0);
@@ -83,6 +95,19 @@ export default function PlansView() {
     }
   });
 
+  const updatePlanMutation = useMutation({
+    mutationFn: ({ id, data }) => plansApi.updatePlan(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['plansList']);
+      alert('Plan price and details updated successfully! Mobile app users will see the updated price immediately.');
+      setEditingPlan(null);
+    },
+    onError: (err) => {
+      const msg = err?.response?.data?.message || err.message || 'Failed to update plan.';
+      alert(`Error: ${msg}`);
+    }
+  });
+
   const deletePlanMutation = useMutation({
     mutationFn: (id) => plansApi.deletePlan(id),
     onSuccess: () => {
@@ -112,6 +137,48 @@ export default function PlansView() {
         gracePeriodDays
       }
     });
+  };
+
+  const handleEditPlanClick = (plan) => {
+    setEditingPlan(plan);
+    setEditForm({
+      name: plan.name || '',
+      price: plan.price !== undefined ? String(plan.price) : '0',
+      billingCycle: plan.billingCycle || 'monthly',
+      durationDays: plan.durationDays !== undefined ? String(plan.durationDays) : '30',
+      status: plan.status || 'active',
+      description: plan.description || '',
+      features: Array.isArray(plan.features) ? plan.features.join('\n') : '',
+    });
+  };
+
+  const handleEditFormChange = (e) => {
+    const { name, value } = e.target;
+    setEditForm((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleSaveEditPlan = (e) => {
+    e.preventDefault();
+    if (!editingPlan?._id) return;
+    const featuresArray = editForm.features
+      .split('\n')
+      .map((f) => f.trim())
+      .filter(Boolean);
+
+    const payload = {
+      name: editForm.name.trim(),
+      price: Number(editForm.price),
+      billingCycle: editForm.billingCycle,
+      durationDays: Number(editForm.durationDays),
+      status: editForm.status,
+      description: editForm.description.trim(),
+      features: featuresArray,
+    };
+
+    updatePlanMutation.mutate({ id: editingPlan._id, data: payload });
   };
 
   const handleCreateFormChange = (e) => {
@@ -181,7 +248,7 @@ export default function PlansView() {
       {/* Header */}
       <div className="flex flex-col gap-1 border-b border-border pb-5">
         <h1 className="text-2xl font-bold tracking-tight text-foreground">Active Subscription Plans</h1>
-        <p className="text-sm text-muted-foreground">Manage service limits, pricing structure, and track revenue per tier.</p>
+        <p className="text-sm text-muted-foreground">Manage service limits, update pricing structure, and track revenue per tier.</p>
       </div>
 
       {/* Pricing Cards Grid */}
@@ -202,6 +269,13 @@ export default function PlansView() {
                   <span className="text-xs font-bold text-foreground uppercase tracking-wider">{plan.name}</span>
                   <div className="flex items-center gap-1.5">
                     <button
+                      onClick={() => handleEditPlanClick(plan)}
+                      className="p-1 rounded-lg hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors"
+                      title="Edit Price & Details"
+                    >
+                      <Pencil size={13} />
+                    </button>
+                    <button
                       onClick={() => {
                         if (window.confirm(`Are you sure you want to delete the pricing plan "${plan.name}"?`)) {
                           deletePlanMutation.mutate(plan._id);
@@ -220,7 +294,7 @@ export default function PlansView() {
                 
                 {/* Pricing info */}
                 <div className="mt-4 flex items-baseline text-foreground">
-                  <span className="text-3xl font-extrabold tracking-tight">${plan.price}</span>
+                  <span className="text-3xl font-extrabold tracking-tight">₹{plan.price}</span>
                   <span className="ml-1 text-xs font-semibold text-muted-foreground">/{frequencyLabel}</span>
                 </div>
                 
@@ -246,12 +320,19 @@ export default function PlansView() {
                 </ul>
               </div>
 
-              <div className="mt-6">
+              <div className="mt-6 flex items-center gap-2">
+                <button 
+                  onClick={() => handleEditPlanClick(plan)}
+                  className="flex-1 h-8 flex items-center justify-center gap-1 text-[11px] font-bold rounded-lg bg-primary/10 hover:bg-primary/20 text-primary transition-all duration-150 border border-primary/20"
+                >
+                  <Pencil size={12} />
+                  Edit Price
+                </button>
                 <button 
                   onClick={() => handleConfigureLimits(plan)}
-                  className="w-full h-8 flex items-center justify-center gap-1 text-[11px] font-bold rounded-lg border border-border hover:bg-secondary text-muted-foreground hover:text-foreground transition-all duration-150"
+                  className="flex-1 h-8 flex items-center justify-center gap-1 text-[11px] font-bold rounded-lg border border-border hover:bg-secondary text-muted-foreground hover:text-foreground transition-all duration-150"
                 >
-                  Configure Limits
+                  Limits
                   <ChevronRight size={12} />
                 </button>
               </div>
@@ -277,9 +358,9 @@ export default function PlansView() {
                 <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" opacity={0.3} />
                   <XAxis dataKey="name" tick={{ fontSize: 10 }} stroke="#94A3B8" />
-                  <YAxis tickFormatter={(val) => `$${val}`} tick={{ fontSize: 10 }} stroke="#94A3B8" />
+                  <YAxis tickFormatter={(val) => `₹${val}`} tick={{ fontSize: 10 }} stroke="#94A3B8" />
                   <Tooltip 
-                    formatter={(val) => [`$${val.toLocaleString()}`, 'Monthly Income']}
+                    formatter={(val) => [`₹${val.toLocaleString()}`, 'Monthly Income']}
                     contentStyle={{ 
                       backgroundColor: 'var(--color-popover)', 
                       borderColor: 'var(--color-border)',
@@ -309,7 +390,7 @@ export default function PlansView() {
             <div className="space-y-4 text-xs">
               <div className="flex items-center justify-between py-2 border-b border-border">
                 <span className="font-semibold text-muted-foreground">Global Currency</span>
-                <span className="font-bold text-foreground bg-secondary px-2.5 py-0.5 rounded-lg border border-border">USD ($)</span>
+                <span className="font-bold text-foreground bg-secondary px-2.5 py-0.5 rounded-lg border border-border">INR (₹)</span>
               </div>
               <div className="flex items-center justify-between py-2 border-b border-border">
                 <span className="font-semibold text-muted-foreground">Active Discount Codes</span>
@@ -321,7 +402,7 @@ export default function PlansView() {
               </div>
               <div className="flex items-center justify-between py-2">
                 <span className="font-semibold text-muted-foreground">Default Payment Gateway</span>
-                <span className="font-bold text-primary">Stripe</span>
+                <span className="font-bold text-primary">Razorpay</span>
               </div>
             </div>
           </div>
@@ -337,6 +418,133 @@ export default function PlansView() {
         </div>
       </div>
 
+      {/* Edit Plan & Price Dialog */}
+      <Dialog
+        isOpen={!!editingPlan}
+        onClose={() => setEditingPlan(null)}
+        title={`Edit Plan & Price - ${editingPlan?.name || ''}`}
+      >
+        {editingPlan && (
+          <form onSubmit={handleSaveEditPlan} className="space-y-4 text-xs">
+            <div className="grid grid-cols-2 gap-3">
+              {/* Plan Name */}
+              <div className="flex flex-col gap-1.5 col-span-2">
+                <label className="font-semibold text-muted-foreground">Plan Name <span className="text-rose-500">*</span></label>
+                <input
+                  type="text"
+                  name="name"
+                  value={editForm.name}
+                  onChange={handleEditFormChange}
+                  className="h-9 px-3 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                  required
+                />
+              </div>
+
+              {/* Price */}
+              <div className="flex flex-col gap-1.5 col-span-2">
+                <label className="font-semibold text-primary font-bold">Plan Price (₹) <span className="text-rose-500">*</span></label>
+                <input
+                  type="number"
+                  name="price"
+                  value={editForm.price}
+                  onChange={handleEditFormChange}
+                  min="0"
+                  className="h-9 px-3 rounded-lg border-2 border-primary bg-background text-foreground text-sm font-bold focus:outline-none focus:ring-2 focus:ring-primary"
+                  required
+                />
+                <span className="text-[10px] text-muted-foreground">Updating the price will instantly reflect on mobile app subscription screen.</span>
+              </div>
+
+              {/* Billing Cycle */}
+              <div className="flex flex-col gap-1.5">
+                <label className="font-semibold text-muted-foreground">Billing Cycle</label>
+                <select
+                  name="billingCycle"
+                  value={editForm.billingCycle}
+                  onChange={handleEditFormChange}
+                  className="h-9 px-3 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                  required
+                >
+                  <option value="monthly">Monthly</option>
+                  <option value="yearly">Yearly</option>
+                  <option value="lifetime">Lifetime</option>
+                </select>
+              </div>
+
+              {/* Duration Days */}
+              <div className="flex flex-col gap-1.5">
+                <label className="font-semibold text-muted-foreground">Duration (Days)</label>
+                <input
+                  type="number"
+                  name="durationDays"
+                  value={editForm.durationDays}
+                  onChange={handleEditFormChange}
+                  min="1"
+                  className="h-9 px-3 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                  required
+                />
+              </div>
+
+              {/* Status */}
+              <div className="flex flex-col gap-1.5 col-span-2">
+                <label className="font-semibold text-muted-foreground">Status</label>
+                <select
+                  name="status"
+                  value={editForm.status}
+                  onChange={handleEditFormChange}
+                  className="h-9 px-3 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                >
+                  <option value="active">Active (visible to mobile users)</option>
+                  <option value="draft">Draft (hidden from users)</option>
+                  <option value="inactive">Inactive</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Description */}
+            <div className="flex flex-col gap-1.5">
+              <label className="font-semibold text-muted-foreground">Description</label>
+              <textarea
+                name="description"
+                value={editForm.description}
+                onChange={handleEditFormChange}
+                rows={2}
+                className="px-3 py-2 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none"
+              />
+            </div>
+
+            {/* Features */}
+            <div className="flex flex-col gap-1.5">
+              <label className="font-semibold text-muted-foreground">Features (one per line)</label>
+              <textarea
+                name="features"
+                value={editForm.features}
+                onChange={handleEditFormChange}
+                rows={4}
+                className="px-3 py-2 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none font-mono"
+              />
+            </div>
+
+            <div className="border-t border-border pt-4 mt-2 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setEditingPlan(null)}
+                className="px-3.5 py-1.5 rounded-lg border border-border hover:bg-secondary text-muted-foreground hover:text-foreground font-semibold transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={updatePlanMutation.isPending}
+                className="px-4 py-1.5 rounded-lg bg-primary hover:bg-primary/95 text-primary-foreground font-semibold transition-colors disabled:opacity-50"
+              >
+                {updatePlanMutation.isPending ? 'Updating...' : 'Save Changes'}
+              </button>
+            </div>
+          </form>
+        )}
+      </Dialog>
+
       {/* Configure Limits Dialog */}
       <Dialog 
         isOpen={!!selectedPlan} 
@@ -351,37 +559,31 @@ export default function PlansView() {
                 type="number"
                 value={chatbotLimit}
                 onChange={(e) => setChatbotLimit(Number(e.target.value))}
-                className="h-9 px-3 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                 min="0"
-                required
+                className="h-9 px-3 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
               />
-              <span className="text-[10px] text-muted-foreground">Set to 0 for unlimited or specify maximum monthly AI chat questions.</span>
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label className="font-semibold text-muted-foreground">Receipt Scanner Scan Limit</label>
+              <label className="font-semibold text-muted-foreground">Receipt Scans Limit</label>
               <input
                 type="number"
                 value={receiptScannerLimit}
                 onChange={(e) => setReceiptScannerLimit(Number(e.target.value))}
-                className="h-9 px-3 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                 min="0"
-                required
+                className="h-9 px-3 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
               />
-              <span className="text-[10px] text-muted-foreground">Set to 0 for unlimited or specify maximum monthly scan actions.</span>
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label className="font-semibold text-muted-foreground">Voice Scanner limit</label>
+              <label className="font-semibold text-muted-foreground">Voice Scanner Limit</label>
               <input
                 type="number"
                 value={voiceScannerLimit}
                 onChange={(e) => setVoiceScannerLimit(Number(e.target.value))}
-                className="h-9 px-3 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                 min="0"
-                required
+                className="h-9 px-3 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
               />
-              <span className="text-[10px] text-muted-foreground">Set to 0 for unlimited or specify maximum monthly voice uploads.</span>
             </div>
 
             <div className="flex flex-col gap-1.5">
@@ -390,11 +592,9 @@ export default function PlansView() {
                 type="number"
                 value={gracePeriodDays}
                 onChange={(e) => setGracePeriodDays(Number(e.target.value))}
-                className="h-9 px-3 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                 min="1"
-                required
+                className="h-9 px-3 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
               />
-              <span className="text-[10px] text-muted-foreground">Number of days allowed for late payment before subscription expires.</span>
             </div>
 
             <div className="border-t border-border pt-4 mt-2 flex justify-end gap-2">
@@ -456,7 +656,7 @@ export default function PlansView() {
 
             {/* Price */}
             <div className="flex flex-col gap-1.5">
-              <label className="font-semibold text-muted-foreground">Price ($) <span className="text-rose-500">*</span></label>
+              <label className="font-semibold text-muted-foreground">Price (₹) <span className="text-rose-500">*</span></label>
               <input
                 type="number"
                 name="price"
@@ -525,8 +725,8 @@ export default function PlansView() {
                 onChange={handleCreateFormChange}
                 className="h-9 px-3 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
               >
-                <option value="draft">Draft (hidden from users)</option>
                 <option value="active">Active (visible to mobile users)</option>
+                <option value="draft">Draft (hidden from users)</option>
                 <option value="inactive">Inactive</option>
               </select>
             </div>
