@@ -94,7 +94,7 @@ export default function SubscriptionsView() {
 
   // Real 6-month trend from backend
   const subscriptionTrend = metrics?.monthlyTrend || [];
-  const activeSubscribers  = summary?.stats?.premiumUsers?.value || 0;
+  const activeSubscribers  = metrics?.activePremiumUsers ?? summary?.stats?.premiumUsers?.value ?? 0;
 
   if (metricsError && subsError) {
     return (
