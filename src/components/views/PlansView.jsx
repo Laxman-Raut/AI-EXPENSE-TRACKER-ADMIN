@@ -40,7 +40,7 @@ const EMPTY_CREATE_FORM = {
 
 export default function PlansView() {
   const queryClient = useQueryClient();
-  const { symbol, currency, formatAmount } = useCurrency();
+  const { symbol, currency, formatAmount, convertAmount } = useCurrency();
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [createForm, setCreateForm] = useState(EMPTY_CREATE_FORM);
@@ -222,7 +222,12 @@ export default function PlansView() {
     createPlanMutation.mutate(payload);
   };
 
-  const chartData = summary?.pie || [];
+  const chartData = React.useMemo(() => {
+    return (summary?.pie || []).map(item => ({
+      ...item,
+      value: convertAmount(item.value)
+    }));
+  }, [summary?.pie, convertAmount]);
   const isLoading = plansLoading || summaryLoading;
 
   if (plansError) {
@@ -360,9 +365,9 @@ export default function PlansView() {
                 <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" opacity={0.3} />
                   <XAxis dataKey="name" tick={{ fontSize: 10 }} stroke="#94A3B8" />
-                  <YAxis tickFormatter={(val) => `${symbol}${val}`} tick={{ fontSize: 10 }} stroke="#94A3B8" />
+                  <YAxis tickFormatter={(val) => `${symbol}${val >= 1000 ? `${(val/1000).toFixed(0)}k` : val}`} tick={{ fontSize: 10 }} stroke="#94A3B8" />
                   <Tooltip 
-                    formatter={(val) => [`${formatAmount(val)}`, 'Monthly Income']}
+                    formatter={(val) => [`${symbol}${Number(val).toLocaleString()}`, 'Monthly Income']}
                     contentStyle={{ 
                       backgroundColor: 'var(--color-popover)', 
                       borderColor: 'var(--color-border)',
