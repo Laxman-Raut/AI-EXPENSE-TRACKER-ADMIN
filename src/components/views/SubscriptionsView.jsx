@@ -70,6 +70,7 @@ export default function SubscriptionsView() {
   const { formatAmount } = useCurrency();
   const [page, setPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState('All');
+  const [planFilter, setPlanFilter] = useState('All');
   const { data: plans = [] } = useQuery({
     queryKey: ['plansList'],
     queryFn: () => plansApi.getPlans(),
