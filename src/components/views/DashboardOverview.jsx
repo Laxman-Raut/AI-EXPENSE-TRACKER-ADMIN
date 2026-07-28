@@ -34,7 +34,7 @@ import {
 } from 'recharts';
 
 export default function DashboardOverview({ onViewChange }) {
-  const { symbol, formatAmount } = useCurrency();
+  const { symbol, formatAmount, convertAmount } = useCurrency();
   const [selectedUser, setSelectedUser] = useState(null);
   const [selectedPayment, setSelectedPayment] = useState(null);
 
