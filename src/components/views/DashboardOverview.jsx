@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { dashboardApi } from '@/services/dashboard.api';
+import { useCurrency } from '@/hooks/useCurrency';
 import StatCard from '../ui/StatCard';
 import { StatCardSkeleton, ChartSkeleton, TableSkeleton } from '../ui/Skeleton';
 import Dialog from '../ui/Dialog';
@@ -33,6 +34,7 @@ import {
 } from 'recharts';
 
 export default function DashboardOverview({ onViewChange }) {
+  const { symbol, formatAmount } = useCurrency();
   const [selectedUser, setSelectedUser] = useState(null);
   const [selectedPayment, setSelectedPayment] = useState(null);
 
@@ -102,7 +104,7 @@ export default function DashboardOverview({ onViewChange }) {
           value={stats.totalRevenue.value}
           growth={stats.totalRevenue.growth}
           icon={CreditCard}
-          prefix="$"
+          prefix={symbol}
           sparkline={sparklines.totalRevenue}
         />
         <StatCard
@@ -110,7 +112,7 @@ export default function DashboardOverview({ onViewChange }) {
           value={stats.monthlyRevenue.value}
           growth={stats.monthlyRevenue.growth}
           icon={CalendarRange}
-          prefix="$"
+          prefix={symbol}
           sparkline={sparklines.monthlyRevenue}
         />
       </div>
@@ -198,7 +200,7 @@ export default function DashboardOverview({ onViewChange }) {
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" opacity={0.3} />
                   <XAxis dataKey="name" tick={{ fontSize: 10 }} stroke="#94A3B8" />
-                  <YAxis tickFormatter={(val) => `$${val}`} tick={{ fontSize: 10 }} stroke="#94A3B8" />
+                  <YAxis tickFormatter={(val) => `${symbol}${val}`} tick={{ fontSize: 10 }} stroke="#94A3B8" />
                   <Tooltip 
                     contentStyle={{ 
                       backgroundColor: 'var(--color-popover)', 
@@ -248,7 +250,7 @@ export default function DashboardOverview({ onViewChange }) {
                       ))}
                     </Pie>
                     <Tooltip 
-                      formatter={(val) => [`$${val.toLocaleString()}`, 'Monthly Income']}
+                      formatter={(val) => [`${formatAmount(val)}`, 'Monthly Income']}
                       contentStyle={{
                         backgroundColor: 'var(--color-popover)',
                         borderColor: 'var(--color-border)',
@@ -261,7 +263,7 @@ export default function DashboardOverview({ onViewChange }) {
                 {/* Center Label */}
                 <div className="absolute flex flex-col items-center justify-center">
                   <span className="text-xs font-semibold text-muted-foreground">MRR</span>
-                  <span className="text-lg font-bold">${stats?.monthlyRevenue.value.toLocaleString() || '0'}</span>
+                  <span className="text-lg font-bold">{formatAmount(stats?.monthlyRevenue.value || 0)}</span>
                 </div>
               </div>
 
@@ -273,7 +275,7 @@ export default function DashboardOverview({ onViewChange }) {
                       <span className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: entry.color }} />
                       {entry.name.split(' ')[0]}
                     </span>
-                    <span className="text-xs font-bold text-foreground mt-0.5">${entry.value.toLocaleString()}</span>
+                    <span className="text-xs font-bold text-foreground mt-0.5">{formatAmount(entry.value)}</span>
                   </div>
                 ))}
               </div>
@@ -382,7 +384,7 @@ export default function DashboardOverview({ onViewChange }) {
                         <p className="font-semibold text-foreground group-hover:text-primary transition-colors">{payment.user}</p>
                         <p className="text-[10px] text-muted-foreground">{payment.email}</p>
                       </td>
-                      <td className="py-3 font-bold text-foreground">${payment.amount.toFixed(2)}</td>
+                      <td className="py-3 font-bold text-foreground">{formatAmount(payment.amount)}</td>
                       <td className="py-3 text-muted-foreground">{payment.provider}</td>
                       <td className="py-3 text-right">
                         <span className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-semibold border ${getStatusColor(payment.status)}`}>
@@ -471,7 +473,7 @@ export default function DashboardOverview({ onViewChange }) {
             <div className="pb-4 border-b border-border flex justify-between items-center">
               <div>
                 <span className="text-xs font-semibold text-muted-foreground uppercase">Receipt Amount</span>
-                <h4 className="font-bold text-foreground text-2xl mt-0.5">${selectedPayment.amount.toFixed(2)}</h4>
+                <h4 className="font-bold text-foreground text-2xl mt-0.5">{formatAmount(selectedPayment.amount)}</h4>
               </div>
               <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border ${getStatusColor(selectedPayment.status)}`}>
                 {selectedPayment.status}

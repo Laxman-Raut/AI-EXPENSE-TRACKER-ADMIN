@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { reportsApi } from '@/services/reports.api';
+import { useCurrency } from '@/hooks/useCurrency';
 import { ChartSkeleton } from '../ui/Skeleton';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
@@ -14,9 +15,6 @@ import {
 } from 'lucide-react';
 
 // ─── Helpers ────────────────────────────────────────────────────
-const fmt = (n) =>
-  new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(n || 0);
-
 const PLAN_COLORS = { pro: '#10b981', basic: '#6366f1', free: '#94a3b8', pro_monthly: '#10b981', pro_yearly: '#0ea5e9' };
 const PIE_COLORS = ['#10b981', '#6366f1', '#f59e0b', '#ef4444', '#06b6d4', '#8b5cf6'];
 
@@ -101,6 +99,7 @@ const downloadCSV = (filename, rows, headers) => {
 
 // ─── Main ───────────────────────────────────────────────────────
 export default function ReportsView() {
+  const { symbol, currency, formatAmount } = useCurrency();
   const [activeTab, setActiveTab] = useState('overview');
   const [paymentPage, setPaymentPage] = useState(1);
   const [paymentStatus, setPaymentStatus] = useState('');
@@ -161,10 +160,10 @@ export default function ReportsView() {
     if (activeTab === 'overview' || activeTab === 'revenue') {
       const rows = (revenue?.monthlyData || []).map(m => ({
         Month: m.name,
-        'Total Revenue (INR)': m.total,
+        [`Total Revenue (${currency})`]: m.total,
         'Payments Count': m.payments,
       }));
-      downloadCSV(`revenue_report_${ts}.csv`, rows, ['Month', 'Total Revenue (INR)', 'Payments Count']);
+      downloadCSV(`revenue_report_${ts}.csv`, rows, ['Month', `Total Revenue (${currency})`, 'Payments Count']);
     } else if (activeTab === 'users') {
       const rows = (users?.monthlyGrowth || []).map(m => ({ Month: m.name, 'New Signups': m.signups }));
       downloadCSV(`users_report_${ts}.csv`, rows, ['Month', 'New Signups']);
@@ -173,23 +172,23 @@ export default function ReportsView() {
         User: h.user,
         Email: h.email,
         Action: h.action,
-        'Amount (INR)': h.amount,
+        [`Amount (${currency})`]: h.amount,
         Provider: h.provider,
         Note: h.note,
         Date: h.createdAt ? new Date(h.createdAt).toLocaleDateString('en-IN') : '',
       }));
-      downloadCSV(`subscriptions_report_${ts}.csv`, rows, ['User','Email','Action','Amount (INR)','Provider','Note','Date']);
+      downloadCSV(`subscriptions_report_${ts}.csv`, rows, ['User','Email','Action',`Amount (${currency})`,'Provider','Note','Date']);
     } else if (activeTab === 'payments') {
       const rows = (payments?.payments || []).map(p => ({
         User: p.user,
         Email: p.email,
-        'Amount (INR)': p.amount,
+        [`Amount (${currency})`]: p.amount,
         Plan: p.plan,
         Provider: p.provider,
         Status: p.status,
         Date: p.paidAt ? new Date(p.paidAt).toLocaleDateString('en-IN') : '',
       }));
-      downloadCSV(`payments_report_${ts}.csv`, rows, ['User','Email','Amount (INR)','Plan','Provider','Status','Date']);
+      downloadCSV(`payments_report_${ts}.csv`, rows, ['User','Email',`Amount (${currency})`,'Plan','Provider','Status','Date']);
     }
   };
 
@@ -246,7 +245,7 @@ export default function ReportsView() {
               <>
                 <KpiCard label="Total Users" value={summary?.totalUsers?.toLocaleString()} sub="All registered accounts" icon={Users} iconClass="text-violet-500" growth={summary?.userGrowth} />
                 <KpiCard label="Active Subscribers" value={summary?.activeSubscribers?.toLocaleString()} sub="Paid plans active" icon={Activity} iconClass="text-emerald-500" />
-                <KpiCard label="Total Revenue" value={fmt(summary?.totalRevenue)} sub={`${fmt(summary?.monthlyRevenue)} this month`} icon={DollarSign} iconClass="text-sky-500" growth={summary?.revenueGrowth} />
+                <KpiCard label="Total Revenue" value={formatAmount(summary?.totalRevenue)} sub={`${formatAmount(summary?.monthlyRevenue)} this month`} icon={DollarSign} iconClass="text-sky-500" growth={summary?.revenueGrowth} />
                 <KpiCard label="Active Plans" value={summary?.activePlans?.toLocaleString()} sub="Plan tiers in use" icon={FileText} iconClass="text-amber-500" />
               </>
             )}
@@ -260,8 +259,8 @@ export default function ReportsView() {
                   <BarChart data={revenue?.monthlyData || []} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" opacity={0.3} />
                     <XAxis dataKey="name" tick={{ fontSize: 10 }} stroke="#94A3B8" />
-                    <YAxis tickFormatter={v => `₹${(v/1000).toFixed(0)}k`} tick={{ fontSize: 10 }} stroke="#94A3B8" />
-                    <Tooltip formatter={v => [fmt(v), 'Revenue']} contentStyle={{ backgroundColor: 'var(--color-popover)', borderColor: 'var(--color-border)', borderRadius: '12px', fontSize: '12px' }} />
+                    <YAxis tickFormatter={v => `${symbol}${(v/1000).toFixed(0)}k`} tick={{ fontSize: 10 }} stroke="#94A3B8" />
+                    <Tooltip formatter={v => [formatAmount(v), 'Revenue']} contentStyle={{ backgroundColor: 'var(--color-popover)', borderColor: 'var(--color-border)', borderRadius: '12px', fontSize: '12px' }} />
                     <Bar dataKey="total" fill="#10b981" radius={[4,4,0,0]} name="Revenue" />
                   </BarChart>
                 </ResponsiveContainer>
@@ -323,8 +322,8 @@ export default function ReportsView() {
                 <BarChart data={revenue?.monthlyData || []} margin={{ top: 10, right: 10, left: -15, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" opacity={0.3} />
                   <XAxis dataKey="name" tick={{ fontSize: 10 }} stroke="#94A3B8" />
-                  <YAxis tickFormatter={v => `₹${(v/1000).toFixed(0)}k`} tick={{ fontSize: 10 }} stroke="#94A3B8" />
-                  <Tooltip formatter={v => [fmt(v), 'Revenue']} contentStyle={{ backgroundColor: 'var(--color-popover)', borderColor: 'var(--color-border)', borderRadius: '12px', fontSize: '12px' }} />
+                  <YAxis tickFormatter={v => `${symbol}${(v/1000).toFixed(0)}k`} tick={{ fontSize: 10 }} stroke="#94A3B8" />
+                  <Tooltip formatter={v => [formatAmount(v), 'Revenue']} contentStyle={{ backgroundColor: 'var(--color-popover)', borderColor: 'var(--color-border)', borderRadius: '12px', fontSize: '12px' }} />
                   <Bar dataKey="total" fill="#10b981" radius={[4,4,0,0]} name="Revenue" />
                 </BarChart>
               </ResponsiveContainer>
@@ -342,7 +341,7 @@ export default function ReportsView() {
                     <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
                       <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: PLAN_COLORS[r._id] || '#6366f1' }} />
                     </div>
-                    <span className="w-16 text-right font-bold text-foreground">{fmt(r.revenue)}</span>
+                    <span className="w-16 text-right font-bold text-foreground">{formatAmount(r.revenue)}</span>
                     <span className="w-8 text-right text-muted-foreground">{pct}%</span>
                   </div>
                 );
@@ -486,7 +485,7 @@ export default function ReportsView() {
                     <Icon size={16} className={color} />
                   </div>
                   <p className="text-xl font-bold text-foreground mt-2">{payments.stats[key]?.count?.toLocaleString() || 0} txns</p>
-                  <p className="text-xs text-muted-foreground mt-1">{fmt(payments.stats[key]?.total || 0)}</p>
+                  <p className="text-xs text-muted-foreground mt-1">{formatAmount(payments.stats[key]?.total || 0)}</p>
                 </div>
               ))}
             </div>
@@ -536,7 +535,7 @@ export default function ReportsView() {
                             <p className="text-[10px] text-muted-foreground mt-0.5">{p.email}</p>
                           </td>
                           <td className="px-4 py-3 capitalize text-muted-foreground">{p.plan || '—'}</td>
-                          <td className="px-4 py-3 font-bold text-foreground">{fmt(p.amount)}</td>
+                          <td className="px-4 py-3 font-bold text-foreground">{formatAmount(p.amount)}</td>
                           <td className="px-4 py-3 capitalize text-muted-foreground">{p.provider || '—'}</td>
                           <td className="px-4 py-3">
                             <span className={`inline-block px-2 py-0.5 rounded-full font-bold text-[10px] border ${PAYMENT_STATUS_STYLE[p.status] || 'bg-muted text-muted-foreground border-border'}`}>

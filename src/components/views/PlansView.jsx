@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { plansApi } from '@/services/plans.api';
 import { dashboardApi } from '@/services/dashboard.api';
+import { useCurrency } from '@/hooks/useCurrency';
 import { ChartSkeleton } from '../ui/Skeleton';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, CartesianGrid } from 'recharts';
 import { Layers, ShieldCheck, Zap, Server, Shield, ShieldAlert, ChevronRight, Trash2, Settings, Pencil, Edit3 } from 'lucide-react';
@@ -39,6 +40,7 @@ const EMPTY_CREATE_FORM = {
 
 export default function PlansView() {
   const queryClient = useQueryClient();
+  const { symbol, currency, formatAmount } = useCurrency();
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [createForm, setCreateForm] = useState(EMPTY_CREATE_FORM);
@@ -294,7 +296,7 @@ export default function PlansView() {
                 
                 {/* Pricing info */}
                 <div className="mt-4 flex items-baseline text-foreground">
-                  <span className="text-3xl font-extrabold tracking-tight">₹{plan.price}</span>
+                  <span className="text-3xl font-extrabold tracking-tight">{formatAmount(plan.price)}</span>
                   <span className="ml-1 text-xs font-semibold text-muted-foreground">/{frequencyLabel}</span>
                 </div>
                 
@@ -358,9 +360,9 @@ export default function PlansView() {
                 <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" opacity={0.3} />
                   <XAxis dataKey="name" tick={{ fontSize: 10 }} stroke="#94A3B8" />
-                  <YAxis tickFormatter={(val) => `₹${val}`} tick={{ fontSize: 10 }} stroke="#94A3B8" />
+                  <YAxis tickFormatter={(val) => `${symbol}${val}`} tick={{ fontSize: 10 }} stroke="#94A3B8" />
                   <Tooltip 
-                    formatter={(val) => [`₹${val.toLocaleString()}`, 'Monthly Income']}
+                    formatter={(val) => [`${formatAmount(val)}`, 'Monthly Income']}
                     contentStyle={{ 
                       backgroundColor: 'var(--color-popover)', 
                       borderColor: 'var(--color-border)',
@@ -390,7 +392,7 @@ export default function PlansView() {
             <div className="space-y-4 text-xs">
               <div className="flex items-center justify-between py-2 border-b border-border">
                 <span className="font-semibold text-muted-foreground">Global Currency</span>
-                <span className="font-bold text-foreground bg-secondary px-2.5 py-0.5 rounded-lg border border-border">INR (₹)</span>
+                <span className="font-bold text-foreground bg-secondary px-2.5 py-0.5 rounded-lg border border-border">{currency === 'USD' ? 'USD ($)' : 'INR (₹)'}</span>
               </div>
               <div className="flex items-center justify-between py-2 border-b border-border">
                 <span className="font-semibold text-muted-foreground">Active Discount Codes</span>
@@ -442,7 +444,7 @@ export default function PlansView() {
 
               {/* Price */}
               <div className="flex flex-col gap-1.5 col-span-2">
-                <label className="font-semibold text-primary font-bold">Plan Price (₹) <span className="text-rose-500">*</span></label>
+                <label className="font-semibold text-primary font-bold">Plan Price ({symbol}) <span className="text-rose-500">*</span></label>
                 <input
                   type="number"
                   name="price"
@@ -656,7 +658,7 @@ export default function PlansView() {
 
             {/* Price */}
             <div className="flex flex-col gap-1.5">
-              <label className="font-semibold text-muted-foreground">Price (₹) <span className="text-rose-500">*</span></label>
+              <label className="font-semibold text-muted-foreground">Price ({symbol}) <span className="text-rose-500">*</span></label>
               <input
                 type="number"
                 name="price"

@@ -3,7 +3,9 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { updateProfile } from '@/store/adminSlice';
+import { setCurrency } from '@/store/uiSlice';
 import { useForm } from 'react-hook-form';
+import { useCurrency } from '@/hooks/useCurrency';
 import { authApi } from '@/services/auth.api';
 import settingsApi from '@/services/settings.api';
 import {
@@ -45,6 +47,7 @@ export default function SettingsView() {
       autoBackup: true,
       emailNotifications: true,
       smsNotifications: false,
+      currency: 'INR',
     }
   });
 
@@ -74,6 +77,7 @@ export default function SettingsView() {
           autoBackup: systemSettings?.autoBackup ?? true,
           emailNotifications: systemSettings?.emailNotifications ?? true,
           smsNotifications: systemSettings?.smsNotifications ?? false,
+          currency: systemSettings?.currency || 'INR',
         });
       } catch (error) {
         console.error('Failed to load settings:', error);
@@ -109,7 +113,10 @@ export default function SettingsView() {
         autoBackup: data.autoBackup,
         emailNotifications: data.emailNotifications,
         smsNotifications: data.smsNotifications,
+        currency: data.currency,
       });
+
+      dispatch(setCurrency(data.currency));
 
       alert('Admin configuration successfully updated on database.');
     } catch (error) {
@@ -341,6 +348,20 @@ export default function SettingsView() {
                     <input type="checkbox" {...register('autoBackup')} className="sr-only peer" />
                     <div className="w-11 h-6 bg-muted peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
                   </label>
+                </div>
+
+                <div className="flex items-center justify-between p-4 rounded-lg bg-muted/20 border border-border">
+                  <div className="pr-4">
+                    <h4 className="text-sm font-semibold text-foreground">Currency</h4>
+                    <p className="text-xs text-muted-foreground mt-1">Select the global currency for the dashboard.</p>
+                  </div>
+                  <select
+                    {...register('currency')}
+                    className="h-10 px-3 rounded-lg border border-border bg-background text-sm font-medium text-foreground focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all"
+                  >
+                    <option value="INR">INR (₹) — Indian Rupee</option>
+                    <option value="USD">USD ($) — US Dollar</option>
+                  </select>
                 </div>
 
              </div>

@@ -3,6 +3,7 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { analyticsApi } from '@/services/analytics.api';
+import { useCurrency } from '@/hooks/useCurrency';
 import { ChartSkeleton } from '../ui/Skeleton';
 import { 
   AreaChart, 
@@ -21,6 +22,7 @@ import {
 import { TrendingUp, Users, ArrowUpRight, Clock, ShieldAlert } from 'lucide-react';
 
 export default function AnalyticsView() {
+  const { symbol, formatAmount } = useCurrency();
   // Fetch charts data
   const { data: chartDataResponse, isLoading, error, refetch } = useQuery({
     queryKey: ['userGrowthCharts'],

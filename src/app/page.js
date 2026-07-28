@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { setActiveView } from '@/store/uiSlice';
+import { setActiveView, setCurrency } from '@/store/uiSlice';
+import { settingsApi } from '@/services/settings.api';
 import Sidebar from '@/components/Sidebar';
 import Navbar from '@/components/Navbar';
 import AdminLoginForm from '@/components/AdminLoginForm';
@@ -56,7 +57,16 @@ export default function Home() {
         dispatch(setActiveView(targetView));
       }
 
-      setLoading(false);
+      if (storedToken) {
+        settingsApi.getSettings()
+          .then((systemSettings) => {
+            dispatch(setCurrency(systemSettings.currency || 'INR'));
+          })
+          .catch((err) => console.error('Failed to fetch settings:', err))
+          .finally(() => setLoading(false));
+      } else {
+        setLoading(false);
+      }
     }
   }, [dispatch]);
 

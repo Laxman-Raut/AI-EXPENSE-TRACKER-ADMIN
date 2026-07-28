@@ -5,6 +5,7 @@ const initialState = {
   theme: 'light',
   activeView: 'dashboard',
   searchQuery: '',
+  currency: 'INR',
 };
 
 export const uiSlice = createSlice({
@@ -36,8 +37,11 @@ export const uiSlice = createSlice({
     setSearchQuery: (state, action) => {
       state.searchQuery = action.payload;
     },
+    setCurrency: (state, action) => {
+      state.currency = action.payload;
+    },
   },
 });
 
-export const { toggleSidebar, setSidebarCollapsed, setTheme, setActiveView, setSearchQuery } = uiSlice.actions;
+export const { toggleSidebar, setSidebarCollapsed, setTheme, setActiveView, setSearchQuery, setCurrency } = uiSlice.actions;
 export default uiSlice.reducer;

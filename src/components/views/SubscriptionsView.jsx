@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { dashboardApi } from '@/services/dashboard.api';
 import { subscriptionsApi } from '@/services/subscriptions.api';
+import { useCurrency } from '@/hooks/useCurrency';
 import { ChartSkeleton, StatCardSkeleton } from '../ui/Skeleton';
 import { 
   BarChart, 
@@ -29,9 +30,6 @@ import {
 } from 'lucide-react';
 
 // ─── Helpers ────────────────────────────────────────────────────
-const fmt = (n) =>
-  new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(n || 0);
-
 const STATUS_STYLE = {
   active:  'bg-emerald-500/10 text-emerald-600 border-emerald-500/20',
   pending: 'bg-amber-500/10 text-amber-600 border-amber-500/20',
@@ -68,6 +66,7 @@ function MetricCard({ label, value, subLabel, icon: Icon, iconClass, isLoading, 
 
 // ─── Main Component ──────────────────────────────────────────────
 export default function SubscriptionsView() {
+  const { formatAmount } = useCurrency();
   const [page, setPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState('All');
   const [planFilter, setPlanFilter] = useState('All');
@@ -150,7 +149,7 @@ export default function SubscriptionsView() {
         {/* ARPU */}
         <MetricCard
           label="ARPU"
-          value={fmt(metrics?.arpu)}
+          value={formatAmount(metrics?.arpu)}
           subLabel={`Avg. revenue across ${metrics?.totalPayingUsers ?? 0} paying users`}
           icon={DollarSign}
           iconClass="text-sky-500"
@@ -161,7 +160,7 @@ export default function SubscriptionsView() {
         {/* Customer LTV */}
         <MetricCard
           label="Customer LTV"
-          value={fmt(metrics?.ltv)}
+          value={formatAmount(metrics?.ltv)}
           subLabel={`Avg. ${metrics?.avgSubscriptionMonths ?? 0} months subscription`}
           icon={TrendingUp}
           iconClass="text-amber-500"
@@ -174,7 +173,7 @@ export default function SubscriptionsView() {
       {!metricsLoading && metrics && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
-            { label: 'Total Revenue', value: fmt(metrics.totalRevenue) },
+            { label: 'Total Revenue', value: formatAmount(metrics.totalRevenue) },
             { label: 'Paying Users', value: metrics.totalPayingUsers?.toLocaleString() ?? 0 },
             { label: 'Churned This Month', value: metrics.churnedThisMonth ?? 0 },
             { label: 'Avg. Sub Duration', value: `${metrics.avgSubscriptionMonths ?? 0} mo` },

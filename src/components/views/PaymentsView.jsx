@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { paymentsApi } from '@/services/payments.api';
+import { useCurrency } from '@/hooks/useCurrency';
 import { TableSkeleton } from '../ui/Skeleton';
 import Dialog from '../ui/Dialog';
 import { 
@@ -20,9 +21,6 @@ import {
 } from 'lucide-react';
 
 // ─── Helpers ────────────────────────────────────────────────────
-const fmt = (n) =>
-  new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(n || 0);
-
 const fmtDate = (d) =>
   d ? new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
 
@@ -56,8 +54,8 @@ function SummaryCard({ icon: Icon, label, value, colorClass }) {
   );
 }
 
-// ─── Main Component ──────────────────────────────────────────────
 export default function PaymentsView() {
+  const { formatAmount } = useCurrency();
   const [search, setSearch]               = useState('');
   const [statusFilter, setStatusFilter]   = useState('');
   const [planFilter, setPlanFilter]       = useState('');
@@ -108,7 +106,7 @@ export default function PaymentsView() {
       {/* Summary Cards */}
       {!isLoading && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <SummaryCard icon={CreditCard}   label="Total Revenue"   value={fmt(summary.totalRevenue)}          colorClass="bg-violet-500/10 text-violet-500" />
+          <SummaryCard icon={CreditCard}   label="Total Revenue"   value={formatAmount(summary.totalRevenue)}          colorClass="bg-violet-500/10 text-violet-500" />
           <SummaryCard icon={CheckCircle}  label="Successful"      value={summary.successCount  ?? 0}         colorClass="bg-emerald-500/10 text-emerald-500" />
           <SummaryCard icon={Clock}        label="Pending"         value={summary.pendingCount  ?? 0}         colorClass="bg-amber-500/10 text-amber-500" />
           <SummaryCard icon={XCircle}      label="Failed"          value={summary.failedCount   ?? 0}         colorClass="bg-rose-500/10 text-rose-500" />
@@ -198,7 +196,7 @@ export default function PaymentsView() {
                       <p className="font-bold text-foreground">{p.user?.fullName || '—'}</p>
                       <p className="text-[10px] text-muted-foreground">{p.user?.email || '—'}</p>
                     </td>
-                    <td className="p-4 font-bold text-foreground">{fmt(p.amount)}</td>
+                    <td className="p-4 font-bold text-foreground">{formatAmount(p.amount)}</td>
                     <td className="p-4 font-medium text-foreground">{planLabel(p.plan)}</td>
                     <td className="p-4 text-muted-foreground font-medium capitalize">{p.provider || '—'}</td>
                     <td className="p-4">
@@ -255,7 +253,7 @@ export default function PaymentsView() {
             <div className="pb-4 border-b border-border flex justify-between items-center">
               <div>
                 <span className="text-xs font-semibold text-muted-foreground uppercase">Amount</span>
-                <h4 className="font-bold text-foreground text-2xl mt-0.5">{fmt(selectedPayment.amount)}</h4>
+                <h4 className="font-bold text-foreground text-2xl mt-0.5">{formatAmount(selectedPayment.amount)}</h4>
               </div>
               <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border capitalize ${statusColor(selectedPayment.status)}`}>
                 {selectedPayment.status}
