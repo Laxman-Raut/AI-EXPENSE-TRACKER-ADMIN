@@ -39,21 +39,29 @@ export const dashboardApi = {
     };
 
     // Adapt charts
-    // 1. Revenue trend: backend gives array of {_id: "YYYY-MM-DD", revenue: N}. Map to name, Basic, Pro, Enterprise, Total.
+    const PLAN_COLORS = {
+      'free': '#94a3b8',
+      'basic': '#6366f1',
+      'pro': '#10b981',
+      'business': '#f59e0b',
+      'enterprise': '#f59e0b'
+    };
+
+    // 1. Revenue trend: backend gives array of { date, revenue, plans }
     const trend = charts.revenueTrend?.map(t => ({
-      name: t._id,
-      Total: t.revenue,
-      Basic: 0, // TODO: Backend does not split daily trend by plan
-      Pro: t.revenue, // Default everything as pro for visualization since basic is not split
-      Enterprise: 0
+      name: t.date || t._id,
+      Total: t.revenue || 0,
+      'Free Tier': t.plans ? (t.plans['Free Tier'] || 0) : 0,
+      'Basic Plan': t.plans ? (t.plans['Basic Plan'] || 0) : 0,
+      'Pro Plan': t.plans ? (t.plans['Pro Plan'] || 0) : 0,
+      'Business Plan': t.plans ? (t.plans['Business Plan'] || 0) : (t.revenue || 0),
     })) || [];
 
-    // 2. Revenue by plan (Pie Chart): backend gives array of {_id: "plan_slug", revenue: N, payments: C}
-    const colors = { pro: '#10b981', basic: '#6366f1', free: '#94a3b8' };
+    // 2. Revenue by plan (Pie Chart): backend gives array of { slug, name, revenue, payments }
     const pie = charts.revenueByPlan?.map(p => ({
-      name: p._id === 'pro' ? 'Pro Plan' : (p._id === 'basic' ? 'Basic Plan' : 'Free Tier'),
-      value: p.revenue,
-      color: colors[p._id] || '#6366f1'
+      name: p.name || (p.slug === 'pro' ? 'Pro Plan' : (p.slug === 'basic' ? 'Basic Plan' : (p.slug === 'business' ? 'Business Plan' : 'Free Tier'))),
+      value: p.revenue || 0,
+      color: PLAN_COLORS[p.slug || 'free'] || '#3b82f6'
     })) || [];
 
     // Adapt recentActivity tables

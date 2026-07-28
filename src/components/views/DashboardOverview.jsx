@@ -185,6 +185,10 @@ export default function DashboardOverview({ onViewChange }) {
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={trend}>
                   <defs>
+                    <linearGradient id="colorFree" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#94a3b8" stopOpacity={0.15}/>
+                      <stop offset="95%" stopColor="#94a3b8" stopOpacity={0}/>
+                    </linearGradient>
                     <linearGradient id="colorBasic" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="#6366f1" stopOpacity={0.15}/>
                       <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
@@ -193,7 +197,7 @@ export default function DashboardOverview({ onViewChange }) {
                       <stop offset="5%" stopColor="#10b981" stopOpacity={0.15}/>
                       <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
                     </linearGradient>
-                    <linearGradient id="colorEnt" x1="0" y1="0" x2="0" y2="1">
+                    <linearGradient id="colorBusiness" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.15}/>
                       <stop offset="95%" stopColor="#f59e0b" stopOpacity={0}/>
                     </linearGradient>
@@ -211,9 +215,9 @@ export default function DashboardOverview({ onViewChange }) {
                       fontSize: '12px'
                     }} 
                   />
-                  <Area type="monotone" dataKey="Basic" stackId="1" stroke="#6366f1" fillOpacity={1} fill="url(#colorBasic)" />
-                  <Area type="monotone" dataKey="Pro" stackId="1" stroke="#10b981" fillOpacity={1} fill="url(#colorPro)" />
-                  <Area type="monotone" dataKey="Enterprise" stackId="1" stroke="#f59e0b" fillOpacity={1} fill="url(#colorEnt)" />
+                  <Area type="monotone" dataKey="Basic Plan" stackId="1" stroke="#6366f1" fillOpacity={1} fill="url(#colorBasic)" />
+                  <Area type="monotone" dataKey="Pro Plan" stackId="1" stroke="#10b981" fillOpacity={1} fill="url(#colorPro)" />
+                  <Area type="monotone" dataKey="Business Plan" stackId="1" stroke="#f59e0b" fillOpacity={1} fill="url(#colorBusiness)" />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
@@ -268,12 +272,12 @@ export default function DashboardOverview({ onViewChange }) {
               </div>
 
               {/* Legends */}
-              <div className="mt-4 w-full grid grid-cols-3 gap-2">
+              <div className="mt-4 w-full grid grid-cols-2 gap-2">
                 {pie.map((entry, index) => (
-                  <div key={`${entry.name}-${index}`} className="flex flex-col items-center text-center">
-                    <span className="flex items-center gap-1.5 text-[10px] font-semibold text-muted-foreground">
+                  <div key={`${entry.name}-${index}`} className="flex flex-col items-center text-center p-1.5 rounded-lg bg-muted/20 border border-border/50">
+                    <span className="flex items-center gap-1.5 text-[10px] font-semibold text-muted-foreground truncate max-w-full">
                       <span className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: entry.color }} />
-                      {entry.name.split(' ')[0]}
+                      <span className="truncate">{entry.name}</span>
                     </span>
                     <span className="text-xs font-bold text-foreground mt-0.5">{formatAmount(entry.value)}</span>
                   </div>
