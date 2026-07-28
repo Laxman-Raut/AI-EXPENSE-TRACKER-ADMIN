@@ -19,6 +19,19 @@ import NotificationsView from '@/components/views/NotificationsView';
 import AiUsageView from '@/components/views/AiUsageView';
 import SettingsView from '@/components/views/SettingsView';
 
+const VALID_VIEWS = [
+  'dashboard',
+  'users',
+  'plans',
+  'subscriptions',
+  'payments',
+  'analytics',
+  'reports',
+  'notifications',
+  'ai-usage',
+  'settings'
+];
+
 export default function Home() {
   const dispatch = useDispatch();
   const { activeView, sidebarCollapsed } = useSelector((state) => state.ui);
@@ -26,14 +39,36 @@ export default function Home() {
   const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Read token from localStorage on mount
+  // Read token and restore activeView from URL hash or localStorage on mount
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const storedToken = localStorage.getItem('admin_token');
       setToken(storedToken);
+
+      // Restore active view from URL hash (#plans) or localStorage
+      const hashView = window.location.hash.replace('#', '').trim();
+      const localView = localStorage.getItem('admin_active_view');
+      const targetView = VALID_VIEWS.includes(hashView)
+        ? hashView
+        : (VALID_VIEWS.includes(localView) ? localView : 'dashboard');
+
+      if (targetView) {
+        dispatch(setActiveView(targetView));
+      }
+
       setLoading(false);
     }
-  }, []);
+  }, [dispatch]);
+
+  // Sync current activeView to URL hash and localStorage whenever activeView changes
+  useEffect(() => {
+    if (typeof window !== 'undefined' && activeView) {
+      localStorage.setItem('admin_active_view', activeView);
+      if (window.location.hash !== `#${activeView}`) {
+        window.history.replaceState(null, '', `#${activeView}`);
+      }
+    }
+  }, [activeView]);
 
   const handleLoginSuccess = (newToken) => {
     localStorage.setItem('admin_token', newToken);
