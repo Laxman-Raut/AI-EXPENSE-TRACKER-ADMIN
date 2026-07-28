@@ -101,7 +101,7 @@ export default function DashboardOverview({ onViewChange }) {
         />
         <StatCard
           title="Total Revenue"
-          value={stats.totalRevenue.value}
+          value={convertAmount(stats.totalRevenue.value)}
           growth={stats.totalRevenue.growth}
           icon={CreditCard}
           prefix={symbol}
@@ -109,7 +109,7 @@ export default function DashboardOverview({ onViewChange }) {
         />
         <StatCard
           title="Monthly Recurring Revenue"
-          value={stats.monthlyRevenue.value}
+          value={convertAmount(stats.monthlyRevenue.value)}
           growth={stats.monthlyRevenue.growth}
           icon={CalendarRange}
           prefix={symbol}
