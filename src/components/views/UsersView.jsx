@@ -227,10 +227,12 @@ export default function UsersView() {
               className="h-9 px-3 rounded-lg border border-border bg-background text-xs font-medium focus:outline-none focus:ring-1 focus:ring-primary"
             >
               <option value="All">All Plans</option>
-              <option value="Free Tier">Free Tier</option>
-              <option value="Basic Plan">Basic Plan</option>
-              <option value="Pro Plan">Pro Plan</option>
-              <option value="Enterprise Plan">Enterprise Plan</option>
+              <option value="free">Free Tier</option>
+              {plans.map((p) => (
+                <option key={p._id || p.slug} value={p.slug}>
+                  {p.name}
+                </option>
+              ))}
             </select>
           </div>
         </div>
