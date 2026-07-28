@@ -66,10 +66,30 @@ export default function DashboardOverview({ onViewChange }) {
 
   const stats = summary?.stats;
   const sparklines = summary?.sparklines;
-  const trend = summary?.trend || [];
-  const pie = summary?.pie || [];
+  const rawTrend = summary?.trend || [];
+  const rawPie = summary?.pie || [];
   const latestUsers = summary?.latestUsers || [];
   const latestPayments = summary?.latestPayments || [];
+
+  // Convert trend and pie according to current active currency (USD -> INR conversion)
+  const trend = React.useMemo(() => {
+    return rawTrend.map(item => {
+      const convertedItem = { name: item.name };
+      Object.keys(item).forEach(key => {
+        if (key !== 'name') {
+          convertedItem[key] = convertAmount(item[key]);
+        }
+      });
+      return convertedItem;
+    });
+  }, [rawTrend, currency, convertAmount]);
+
+  const pie = React.useMemo(() => {
+    return rawPie.map(item => ({
+      ...item,
+      value: convertAmount(item.value)
+    }));
+  }, [rawPie, currency, convertAmount]);
 
   // Render stats cards grid
   const renderStats = () => {
@@ -204,8 +224,9 @@ export default function DashboardOverview({ onViewChange }) {
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" opacity={0.3} />
                   <XAxis dataKey="name" tick={{ fontSize: 10 }} stroke="#94A3B8" />
-                  <YAxis tickFormatter={(val) => `${symbol}${val}`} tick={{ fontSize: 10 }} stroke="#94A3B8" />
+                  <YAxis tickFormatter={(val) => `${symbol}${Number(val).toLocaleString(currency === 'USD' ? 'en-US' : 'en-IN')}`} tick={{ fontSize: 10 }} stroke="#94A3B8" />
                   <Tooltip 
+                    formatter={(val) => [`${symbol}${Number(val).toLocaleString(currency === 'USD' ? 'en-US' : 'en-IN')}`, '']}
                     contentStyle={{ 
                       backgroundColor: 'var(--color-popover)', 
                       borderColor: 'var(--color-border)',
