@@ -7,10 +7,10 @@ export const subscriptionsApi = {
     const queryParams = {};
     if (search) queryParams.search = search;
     if (status && status !== 'All') {
-      queryParams.status = status === 'Active' ? 'active' : (status === 'Pending' ? 'pending' : 'expired');
+      queryParams.status = status.toLowerCase();
     }
     if (plan && plan !== 'All') {
-      queryParams.plan = plan === 'Free Tier' ? 'free' : 'pro';
+      queryParams.plan = plan.toLowerCase();
     }
     queryParams.page = page;
     queryParams.limit = limit;

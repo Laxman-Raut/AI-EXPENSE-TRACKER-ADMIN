@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { dashboardApi } from '@/services/dashboard.api';
 import { subscriptionsApi } from '@/services/subscriptions.api';
+import { plansApi } from '@/services/plans.api';
 import { useCurrency } from '@/hooks/useCurrency';
 import { ChartSkeleton, StatCardSkeleton } from '../ui/Skeleton';
 import { 
@@ -69,7 +70,10 @@ export default function SubscriptionsView() {
   const { formatAmount } = useCurrency();
   const [page, setPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState('All');
-  const [planFilter, setPlanFilter] = useState('All');
+  const { data: plans = [] } = useQuery({
+    queryKey: ['plansList'],
+    queryFn: () => plansApi.getPlans(),
+  });
 
   const { data: summary } = useQuery({
     queryKey: ['dashboardSummary'],
@@ -251,8 +255,12 @@ export default function SubscriptionsView() {
               onChange={(e) => { setPlanFilter(e.target.value); setPage(1); }}
               className="h-8 px-2.5 text-xs rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
             >
-              {['All', 'Pro Plan'].map(p => (
-                <option key={p} value={p}>{p}</option>
+              <option value="All">All Plans</option>
+              <option value="free">Free Tier</option>
+              {plans.map((p) => (
+                <option key={p._id || p.slug} value={p.slug}>
+                  {p.name}
+                </option>
               ))}
             </select>
           </div>
@@ -297,10 +305,18 @@ export default function SubscriptionsView() {
                     const startDate = sub.subscription?.startDate
                       ? new Date(sub.subscription.startDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
                       : '—';
-                    const planLabel = sub.subscription?.plan === 'free' ? 'Free Tier'
-                      : sub.subscription?.plan === 'pro' ? 'Pro Plan'
-                      : sub.subscription?.plan === 'basic' ? 'Basic Plan'
-                      : (sub.subscription?.plan || '—');
+                    const formatPlanName = (planStr) => {
+                      if (!planStr || planStr === 'free' || planStr === 'none') return 'Free Tier';
+                      const str = String(planStr).trim();
+                      if (str === 'pro') return 'Pro Plan';
+                      if (str === 'basic') return 'Basic Plan';
+                      if (str === 'business' || str === 'business-plan') return 'Business Plan';
+                      return str
+                        .split(/[-_]/)
+                        .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+                        .join(' ');
+                    };
+                    const planLabel = formatPlanName(sub.subscription?.plan);
 
                     return (
                       <tr key={sub._id} className="border-b border-border hover:bg-muted/20 transition-colors">
