@@ -143,9 +143,10 @@ export default function PlansView() {
 
   const handleEditPlanClick = (plan) => {
     setEditingPlan(plan);
+    const initialPrice = currency === 'INR' ? convertAmount(plan.price) : (plan.price ?? 0);
     setEditForm({
       name: plan.name || '',
-      price: plan.price !== undefined ? String(plan.price) : '0',
+      price: String(initialPrice),
       billingCycle: plan.billingCycle || 'monthly',
       durationDays: plan.durationDays !== undefined ? String(plan.durationDays) : '30',
       status: plan.status || 'active',
@@ -170,9 +171,13 @@ export default function PlansView() {
       .map((f) => f.trim())
       .filter(Boolean);
 
+    const enteredPrice = Number(editForm.price);
+    const baseUsdPrice = currency === 'INR' ? (enteredPrice / 85.0) : enteredPrice;
+
     const payload = {
       name: editForm.name.trim(),
-      price: Number(editForm.price),
+      price: parseFloat(baseUsdPrice.toFixed(2)),
+      currency: 'USD',
       billingCycle: editForm.billingCycle,
       durationDays: Number(editForm.durationDays),
       status: editForm.status,
@@ -208,11 +213,16 @@ export default function PlansView() {
       .split('\n')
       .map((f) => f.trim())
       .filter(Boolean);
+
+    const enteredPrice = Number(createForm.price);
+    const baseUsdPrice = currency === 'INR' ? (enteredPrice / 85.0) : enteredPrice;
+
     const payload = {
       name: createForm.name.trim(),
       slug: createForm.slug.trim(),
       description: createForm.description.trim(),
-      price: Number(createForm.price),
+      price: parseFloat(baseUsdPrice.toFixed(2)),
+      currency: 'USD',
       billingCycle: createForm.billingCycle,
       durationDays: Number(createForm.durationDays),
       icon: createForm.icon,
