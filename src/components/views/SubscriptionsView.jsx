@@ -92,6 +92,16 @@ export default function SubscriptionsView() {
     keepPreviousData: true,
   });
 
+  // Sort subscribers: newest subscription (latest startDate / createdAt) first at top
+  const sortedSubscriptions = useMemo(() => {
+    const list = subsData?.subscriptions ? [...subsData.subscriptions] : [];
+    return list.sort((a, b) => {
+      const timeA = a.subscription?.startDate ? new Date(a.subscription.startDate).getTime() : (a.createdAt ? new Date(a.createdAt).getTime() : 0);
+      const timeB = b.subscription?.startDate ? new Date(b.subscription.startDate).getTime() : (b.createdAt ? new Date(b.createdAt).getTime() : 0);
+      return timeB - timeA;
+    });
+  }, [subsData?.subscriptions]);
+
   // Real 6-month trend from backend
   const subscriptionTrend = metrics?.monthlyTrend || [];
   const activeSubscribers  = metrics?.activePremiumUsers ?? summary?.stats?.premiumUsers?.value ?? 0;
@@ -296,7 +306,7 @@ export default function SubscriptionsView() {
                   </tr>
                 </thead>
                 <tbody>
-                  {(subsData?.subscriptions || []).map((sub) => {
+                  {sortedSubscriptions.map((sub) => {
                     const status = sub.subscription?.status || 'unknown';
                     const statusStyle = STATUS_STYLE[status] || 'bg-muted text-muted-foreground border-border';
                     const StatusIcon = STATUS_ICON[status] || Clock;
