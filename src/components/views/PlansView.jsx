@@ -62,6 +62,7 @@ export default function PlansView() {
   const [receiptScannerLimit, setReceiptScannerLimit] = useState(0);
   const [voiceScannerLimit, setVoiceScannerLimit] = useState(0);
   const [gracePeriodDays, setGracePeriodDays] = useState(7);
+  const [splitBillEnabled, setSplitBillEnabled] = useState(true);
 
   const { data: plans = [], isLoading: plansLoading, error: plansError, refetch: refetchPlans } = useQuery({
     queryKey: ['plansList'],
@@ -125,6 +126,7 @@ export default function PlansView() {
     setReceiptScannerLimit(plan.limits?.receiptScannerLimit || 0);
     setVoiceScannerLimit(plan.limits?.voiceScannerLimit || 0);
     setGracePeriodDays(plan.limits?.gracePeriodDays || 7);
+    setSplitBillEnabled(plan.limits?.enableSplitBill !== false);
   };
 
   const handleSaveLimits = (e) => {
@@ -136,7 +138,8 @@ export default function PlansView() {
         chatbotLimit,
         receiptScannerLimit,
         voiceScannerLimit,
-        gracePeriodDays
+        gracePeriodDays,
+        enableSplitBill: splitBillEnabled,
       }
     });
   };
@@ -612,6 +615,26 @@ export default function PlansView() {
                 min="1"
                 className="h-9 px-3 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
               />
+            </div>
+
+            <div className="flex items-center justify-between gap-3 rounded-lg border border-border bg-muted/20 px-4 py-3">
+              <div>
+                <p className="font-semibold text-foreground text-xs">Enable Split Bill</p>
+                <p className="text-[10px] text-muted-foreground mt-0.5">Allow users on this plan to create split bills in groups</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSplitBillEnabled(!splitBillEnabled)}
+                className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors duration-200 focus:outline-none ${
+                  splitBillEnabled ? 'bg-emerald-500' : 'bg-muted-foreground/30'
+                }`}
+              >
+                <span
+                  className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow-sm transition-transform duration-200 ${
+                    splitBillEnabled ? 'translate-x-[18px]' : 'translate-x-[3px]'
+                  }`}
+                />
+              </button>
             </div>
 
             <div className="border-t border-border pt-4 mt-2 flex justify-end gap-2">
