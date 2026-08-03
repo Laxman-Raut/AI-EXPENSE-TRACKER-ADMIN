@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { notificationsApi } from '@/services/notifications.api';
 import { TableSkeleton } from '../ui/Skeleton';
@@ -13,21 +13,30 @@ import {
   CheckCheck,
   Send,
   History,
-  Megaphone,
   Radio,
-  ListOrdered
+  ListOrdered,
+  Clock,
+  Calendar,
+  Zap,
+  Play,
+  Pause
 } from 'lucide-react';
 
 export default function NotificationsView() {
   const [activeTab, setActiveTab] = useState('broadcast');
   const queryClient = useQueryClient();
 
-  // ----- TAB 1: BROADCAST STATE -----
+  // ----- TAB 1: BROADCAST & SCHEDULING STATE -----
   const [campaignTitle, setCampaignTitle] = useState('');
   const [campaignBody, setCampaignBody] = useState('');
   const [category, setCategory] = useState('system');
   const [targetSegment, setTargetSegment] = useState('all');
   const [targetEmail, setTargetEmail] = useState('');
+
+  // Scheduling state
+  const [scheduleType, setScheduleType] = useState('immediate'); // 'immediate', 'daily', 'specific_date'
+  const [scheduledTime, setScheduledTime] = useState('14:00'); // Default 2:00 PM
+  const [scheduledDate, setScheduledDate] = useState('');
 
   // Audience Count Query
   const { data: audienceCount = 0 } = useQuery({
@@ -38,40 +47,84 @@ export default function NotificationsView() {
 
   const sendBroadcastMutation = useMutation({
     mutationFn: (payload) => notificationsApi.sendBroadcast(payload),
-    onSuccess: () => {
-      alert('Campaign broadcasted successfully!');
+    onSuccess: (data) => {
+      alert(data.message || 'Notification broadcast / schedule created successfully!');
       setCampaignTitle('');
       setCampaignBody('');
       setTargetEmail('');
+      setScheduledDate('');
       queryClient.invalidateQueries(['campaignsList']);
       setActiveTab('history');
     },
-    onError: (err) => alert(err.message || 'Failed to send broadcast.')
+    onError: (err) => alert(err.message || 'Failed to process request.')
   });
 
   const handleSendBroadcast = () => {
     if (!campaignTitle || !campaignBody) {
-      alert('Please provide a title and body.');
+      alert('Please provide a campaign title and body.');
       return;
     }
-    if (window.confirm(`Are you sure you want to send this broadcast to ${audienceCount} users?`)) {
+
+    if (scheduleType === 'daily' && !scheduledTime) {
+      alert('Please select a daily execution time (e.g. 14:00 for 2:00 PM).');
+      return;
+    }
+
+    if (scheduleType === 'specific_date' && (!scheduledDate || !scheduledTime)) {
+      alert('Please select both a date and time for the scheduled campaign.');
+      return;
+    }
+
+    let fullScheduledDate = null;
+    if (scheduleType === 'specific_date' && scheduledDate && scheduledTime) {
+      fullScheduledDate = `${scheduledDate}T${scheduledTime}:00`;
+    }
+
+    const confirmMsg = scheduleType === 'immediate'
+      ? `Are you sure you want to send this broadcast NOW to ${audienceCount} users?`
+      : scheduleType === 'daily'
+      ? `Schedule this campaign to run EVERY DAY at ${scheduledTime}?`
+      : `Schedule this campaign for ${scheduledDate} at ${scheduledTime}?`;
+
+    if (window.confirm(confirmMsg)) {
       sendBroadcastMutation.mutate({
         title: campaignTitle,
         body: campaignBody,
         category,
         segment: targetSegment,
-        email: targetEmail
+        email: targetEmail,
+        scheduleType,
+        scheduledTime,
+        scheduledDate: fullScheduledDate
       });
     }
   };
 
-  // ----- TAB 2: CAMPAIGNS HISTORY -----
+  // ----- TAB 2: CAMPAIGNS HISTORY & SCHEDULED RULES -----
   const { data: campaigns = [], isLoading: isLoadingCampaigns } = useQuery({
     queryKey: ['campaignsList'],
     queryFn: () => notificationsApi.getCampaigns()
   });
 
-  // ----- TAB 3: SYSTEM NOTIFICATIONS -----
+  const updateStatusMutation = useMutation({
+    mutationFn: ({ id, status }) => notificationsApi.updateCampaignStatus(id, status),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries(['campaignsList']);
+      alert(data.message || 'Campaign status updated.');
+    },
+    onError: (err) => alert(err.message || 'Failed to update campaign status.')
+  });
+
+  const deleteCampaignMutation = useMutation({
+    mutationFn: (id) => notificationsApi.deleteCampaign(id),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries(['campaignsList']);
+      alert(data.message || 'Campaign deleted.');
+    },
+    onError: (err) => alert(err.message || 'Failed to delete campaign.')
+  });
+
+  // ----- TAB 3: SYSTEM NOTIFICATIONS LOGS -----
   const { data: dbNotifications = [], isLoading: isLoadingNotifs, error, refetch } = useQuery({
     queryKey: ['notificationsList'],
     queryFn: () => notificationsApi.getNotifications()
@@ -131,7 +184,7 @@ export default function NotificationsView() {
             }`}
           >
             <Radio size={16} />
-            Campaign Broadcast
+            Broadcast & Scheduler
           </button>
           
           <button
@@ -143,7 +196,7 @@ export default function NotificationsView() {
             }`}
           >
             <ListOrdered size={16} />
-            Sent Campaign History
+            Campaigns & Schedules ({campaigns.length})
           </button>
           
           <button
@@ -160,7 +213,7 @@ export default function NotificationsView() {
         </div>
       </div>
 
-      {/* TAB 1: BROADCAST */}
+      {/* TAB 1: BROADCAST & SCHEDULER */}
       {activeTab === 'broadcast' && (
         <div className="bg-card border border-border rounded-xl shadow-sm p-6 space-y-6">
           <div className="space-y-4">
@@ -170,7 +223,7 @@ export default function NotificationsView() {
                 type="text"
                 value={campaignTitle}
                 onChange={e => setCampaignTitle(e.target.value)}
-                placeholder="End of Month: Check your budget utilization!"
+                placeholder="Daily Reminder: Don't forget to track your expenses today!"
                 className="w-full h-10 px-3 bg-background border border-border rounded-lg text-sm text-foreground focus:outline-none focus:border-primary transition-colors"
               />
             </div>
@@ -204,7 +257,92 @@ export default function NotificationsView() {
               </div>
             </div>
 
-            <div>
+            {/* Schedule Type Selection */}
+            <div className="pt-2 border-t border-border space-y-3">
+              <label className="block text-xs font-bold text-foreground mb-1">Execution Schedule</label>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {[
+                  { id: 'immediate', label: 'Send Immediately', icon: Zap, sub: 'Dispatches now' },
+                  { id: 'daily', label: 'Daily Constant Time', icon: Clock, sub: 'Runs every day at fixed time' },
+                  { id: 'specific_date', label: 'Specific Date & Time', icon: Calendar, sub: 'One-time on scheduled date' },
+                ].map(sch => {
+                  const IconComp = sch.icon;
+                  const isSelected = scheduleType === sch.id;
+                  return (
+                    <button
+                      key={sch.id}
+                      onClick={() => setScheduleType(sch.id)}
+                      className={`p-3 border rounded-lg text-left transition-all ${
+                        isSelected 
+                          ? 'border-primary bg-primary/10 ring-1 ring-primary' 
+                          : 'border-border bg-background hover:bg-muted/50'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <IconComp size={16} className={isSelected ? 'text-primary' : 'text-muted-foreground'} />
+                        <span className={`text-xs font-bold ${isSelected ? 'text-primary' : 'text-foreground'}`}>
+                          {sch.label}
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-muted-foreground mt-1">{sch.sub}</p>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Dynamic Time / Date Inputs */}
+              {scheduleType === 'daily' && (
+                <div className="p-4 bg-muted/30 border border-border rounded-lg space-y-2 animate-in fade-in duration-200">
+                  <label className="block text-xs font-bold text-foreground">
+                    Daily Constant Time (24h Format)
+                  </label>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="time"
+                      value={scheduledTime}
+                      onChange={e => setScheduledTime(e.target.value)}
+                      className="h-10 px-3 bg-background border border-border rounded-lg text-sm text-foreground focus:outline-none focus:border-primary"
+                    />
+                    <span className="text-xs text-muted-foreground">
+                      Notification will automatically trigger every day at <strong>{scheduledTime || '14:00'}</strong> (e.g. 2:00 PM).
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {scheduleType === 'specific_date' && (
+                <div className="p-4 bg-muted/30 border border-border rounded-lg space-y-3 animate-in fade-in duration-200">
+                  <label className="block text-xs font-bold text-foreground">
+                    Select Target Date & Time
+                  </label>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground font-medium">Date:</span>
+                      <input
+                        type="date"
+                        value={scheduledDate}
+                        onChange={e => setScheduledDate(e.target.value)}
+                        className="h-10 px-3 bg-background border border-border rounded-lg text-sm text-foreground focus:outline-none focus:border-primary"
+                      />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground font-medium">Time:</span>
+                      <input
+                        type="time"
+                        value={scheduledTime}
+                        onChange={e => setScheduledTime(e.target.value)}
+                        className="h-10 px-3 bg-background border border-border rounded-lg text-sm text-foreground focus:outline-none focus:border-primary"
+                      />
+                    </div>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">
+                    Will trigger one-time on <strong>{scheduledDate || 'selected date'}</strong> at <strong>{scheduledTime || 'selected time'}</strong>.
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <div className="pt-2">
               <label className="block text-xs font-bold text-foreground mb-2">Target Audience Segment</label>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                 {[
@@ -257,14 +395,21 @@ export default function NotificationsView() {
               disabled={sendBroadcastMutation.isPending}
               className="w-full sm:w-auto h-10 px-6 bg-primary hover:bg-primary/95 text-primary-foreground text-sm font-bold rounded-lg transition-colors flex items-center justify-center gap-2 shadow-md shadow-primary/20"
             >
-              <Send size={16} />
-              {sendBroadcastMutation.isPending ? 'Sending...' : 'Send Broadcast'}
+              {scheduleType === 'immediate' ? <Send size={16} /> : <Clock size={16} />}
+              {sendBroadcastMutation.isPending 
+                ? 'Processing...' 
+                : scheduleType === 'immediate'
+                ? 'Send Broadcast Now'
+                : scheduleType === 'daily'
+                ? `Schedule Daily at ${scheduledTime}`
+                : `Schedule for ${scheduledDate || 'Date'} at ${scheduledTime || 'Time'}`
+              }
             </button>
           </div>
         </div>
       )}
 
-      {/* TAB 2: CAMPAIGNS HISTORY */}
+      {/* TAB 2: CAMPAIGNS HISTORY & SCHEDULES */}
       {activeTab === 'history' && (
         <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden">
           {isLoadingCampaigns ? (
@@ -272,36 +417,93 @@ export default function NotificationsView() {
           ) : campaigns.length === 0 ? (
             <div className="p-16 text-center text-muted-foreground">
               <History className="mx-auto mb-3 opacity-50" size={32} />
-              <p className="text-sm">No campaigns sent yet.</p>
+              <p className="text-sm">No campaigns or scheduled rules created yet.</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="border-b border-border bg-muted/50 text-xs font-bold text-muted-foreground">
-                    <th className="p-4 whitespace-nowrap">Campaign</th>
-                    <th className="p-4">Category</th>
+                    <th className="p-4 whitespace-nowrap">Campaign Title & Body</th>
+                    <th className="p-4">Schedule / Frequency</th>
                     <th className="p-4">Segment</th>
+                    <th className="p-4">Status</th>
                     <th className="p-4 text-right">Recipients</th>
-                    <th className="p-4 text-right">Date</th>
+                    <th className="p-4 text-right">Created Date</th>
+                    <th className="p-4 text-center">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border text-xs text-foreground">
-                  {campaigns.map((camp, idx) => (
-                    <tr key={idx} className="hover:bg-muted/30 transition-colors">
+                  {campaigns.map((camp) => (
+                    <tr key={camp._id} className="hover:bg-muted/30 transition-colors">
                       <td className="p-4">
                         <div className="font-bold">{camp.title}</div>
                         <div className="text-muted-foreground truncate max-w-xs">{camp.body}</div>
                       </td>
-                      <td className="p-4 capitalize">
-                        <span className="px-2 py-1 rounded bg-secondary text-secondary-foreground border border-border text-[10px] font-bold">
-                          {camp.category}
+                      <td className="p-4">
+                        {camp.scheduleType === 'daily' ? (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 font-bold text-[11px]">
+                            <Clock size={12} />
+                            Daily at {camp.scheduledTime || '14:00'}
+                          </span>
+                        ) : camp.scheduleType === 'specific_date' ? (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 font-bold text-[11px]">
+                            <Calendar size={12} />
+                            {camp.scheduledDate ? new Date(camp.scheduledDate).toLocaleString() : 'Scheduled'}
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-muted text-muted-foreground font-semibold text-[10px]">
+                            <Zap size={10} />
+                            Immediate
+                          </span>
+                        )}
+                      </td>
+                      <td className="p-4 capitalize">{camp.targetSegment || camp.segment || 'all'}</td>
+                      <td className="p-4">
+                        <span className={`px-2 py-1 rounded-full text-[10px] font-bold capitalize border ${
+                          camp.status === 'active' 
+                            ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
+                            : camp.status === 'scheduled'
+                            ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20'
+                            : camp.status === 'paused'
+                            ? 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 border-yellow-500/20'
+                            : camp.status === 'completed' || camp.status === 'sent'
+                            ? 'bg-secondary text-secondary-foreground border-border'
+                            : 'bg-muted text-muted-foreground border-border'
+                        }`}>
+                          {camp.status || 'sent'}
                         </span>
                       </td>
-                      <td className="p-4 capitalize">{camp.segment}</td>
-                      <td className="p-4 text-right font-mono">{camp.recipientsCount}</td>
+                      <td className="p-4 text-right font-mono">{camp.recipientCount || camp.recipientsCount || 0}</td>
                       <td className="p-4 text-right text-muted-foreground">
                         {new Date(camp.createdAt).toLocaleDateString()}
+                      </td>
+                      <td className="p-4 text-center">
+                        <div className="flex items-center justify-center gap-2">
+                          {(camp.scheduleType === 'daily' || camp.scheduleType === 'specific_date') && (
+                            <button
+                              onClick={() => {
+                                const newStatus = camp.status === 'active' || camp.status === 'scheduled' ? 'paused' : 'active';
+                                updateStatusMutation.mutate({ id: camp._id, status: newStatus });
+                              }}
+                              title={camp.status === 'active' || camp.status === 'scheduled' ? 'Pause Campaign' : 'Resume Campaign'}
+                              className="p-1.5 hover:bg-secondary text-foreground rounded-lg transition-colors border border-border"
+                            >
+                              {camp.status === 'active' || camp.status === 'scheduled' ? <Pause size={14} /> : <Play size={14} />}
+                            </button>
+                          )}
+                          <button
+                            onClick={() => {
+                              if (window.confirm('Delete this campaign / scheduled rule?')) {
+                                deleteCampaignMutation.mutate(camp._id);
+                              }
+                            }}
+                            title="Delete Campaign"
+                            className="p-1.5 hover:bg-rose-500/10 text-rose-500 rounded-lg transition-colors border border-border"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}

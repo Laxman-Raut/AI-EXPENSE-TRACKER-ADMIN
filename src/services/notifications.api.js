@@ -26,6 +26,14 @@ export const notificationsApi = {
     const response = await apiClient.get('/v1/admin/notifications/campaigns');
     return response.data.data;
   },
+  updateCampaignStatus: async (id, status) => {
+    const response = await apiClient.patch(`/v1/admin/notifications/campaigns/${id}/status`, { status });
+    return response.data;
+  },
+  deleteCampaign: async (id) => {
+    const response = await apiClient.delete(`/v1/admin/notifications/campaigns/${id}`);
+    return response.data;
+  },
   getAudienceCount: async (segment, email) => {
     const response = await apiClient.get('/v1/admin/notifications/audience-count', {
       params: { segment, email }
