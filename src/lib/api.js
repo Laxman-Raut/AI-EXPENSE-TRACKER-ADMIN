@@ -4,39 +4,85 @@ const apiClient = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api',
   headers: {
     'Content-Type': 'application/json',
+    'X-Client-Type': 'dashboard',
   },
+  withCredentials: true, // Send cookies with every request
 });
 
-// Request Interceptor: Attach JWT Token
-apiClient.interceptors.request.use(
-  (config) => {
-    if (typeof window !== 'undefined') {
-      const token = localStorage.getItem('admin_token');
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-      }
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
+// ─────────────────────────────────────────────────────────────
+// Silent Token Refresh Logic
+// ─────────────────────────────────────────────────────────────
+let isRefreshing = false;
+let failedQueue = [];
 
-// Response Interceptor: Catch Auth Errors (Expired Token / Unauthenticated)
+const processQueue = (error, success = false) => {
+  failedQueue.forEach(({ resolve, reject }) => {
+    if (success) {
+      resolve();
+    } else {
+      reject(error);
+    }
+  });
+  failedQueue = [];
+};
+
+// Response Interceptor: Auto-refresh on 401
 apiClient.interceptors.response.use(
   (response) => response,
-  (error) => {
-    if (error.response) {
-      const status = error.response.status;
-      // 401 Unauthorized / 403 Forbidden indicates invalid or expired credentials
-      if (status === 401 || status === 403) {
+  async (error) => {
+    const originalRequest = error.config;
+
+    // Only attempt refresh on 401 (not 403), and not on refresh/login endpoints
+    if (
+      error.response?.status === 401 &&
+      !originalRequest._retry &&
+      !originalRequest.url?.includes('/auth/refresh-token') &&
+      !originalRequest.url?.includes('/auth/login')
+    ) {
+      if (isRefreshing) {
+        // Another refresh is in progress — queue this request
+        return new Promise((resolve, reject) => {
+          failedQueue.push({
+            resolve: () => resolve(apiClient(originalRequest)),
+            reject,
+          });
+        });
+      }
+
+      originalRequest._retry = true;
+      isRefreshing = true;
+
+      try {
+        // Attempt to refresh the access token
+        await axios.post(
+          `${apiClient.defaults.baseURL}/auth/refresh-token`,
+          {},
+          {
+            withCredentials: true,
+            headers: { 'X-Client-Type': 'dashboard' },
+          }
+        );
+
+        // Refresh succeeded — process queued requests
+        processQueue(null, true);
+
+        // Retry the original request
+        return apiClient(originalRequest);
+      } catch (refreshError) {
+        // Refresh failed — clear queue
+        processQueue(refreshError, false);
+
         if (typeof window !== 'undefined') {
+          // Clean up any legacy localStorage tokens
           localStorage.removeItem('admin_token');
-          window.location.reload(); // Force page refresh to redirect to login overlay
         }
+
+        return Promise.reject(refreshError);
+      } finally {
+        isRefreshing = false;
       }
     }
+
     return Promise.reject(error);
   }
 );

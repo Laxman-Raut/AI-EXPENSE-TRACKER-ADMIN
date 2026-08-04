@@ -23,22 +23,23 @@ export default function AdminLoginForm({ onLoginSuccess }) {
     setErrorMsg('');
     try {
       const response = await authApi.login(data.email, data.password);
-      if (response.success && response.data.token) {
-        // Double check if user has admin privileges
+      if (response.success && response.data?.user) {
         const userRole = response.data.user?.role;
         if (userRole === 'admin' || userRole === 'super_admin') {
-          onLoginSuccess(response.data.token);
+          // Cookies are set automatically by the browser from Set-Cookie headers
+          // No need to store token in localStorage
+          onLoginSuccess(response.data);
         } else {
           setErrorMsg('Access Denied: You do not have administrator permissions.');
         }
       } else {
-        setErrorMsg('Authentication failed. No token returned.');
+        setErrorMsg('Authentication failed.');
       }
     } catch (error) {
       setErrorMsg(
         error.response?.data?.message || 
         error.message || 
-        'An error occurred during authentication. Verify your server is online.'
+        'An error occurred during authentication.'
       );
     }
   };

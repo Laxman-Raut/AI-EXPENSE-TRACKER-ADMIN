@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { setActiveView, setCurrency } from '@/store/uiSlice';
 import { settingsApi } from '@/services/settings.api';
+import { authApi } from '@/services/auth.api';
 import Sidebar from '@/components/Sidebar';
 import Navbar from '@/components/Navbar';
 import AdminLoginForm from '@/components/AdminLoginForm';
@@ -38,35 +39,47 @@ export default function Home() {
   const { activeView, sidebarCollapsed } = useSelector((state) => state.ui);
   
   const [token, setToken] = useState(null);
+  const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
   // Read token and restore activeView from URL hash or localStorage on mount
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const storedToken = localStorage.getItem('admin_token');
-      setToken(storedToken);
+    const checkAuth = async () => {
+      try {
+        const res = await authApi.getProfile();
+        if (
+          res.success &&
+          (res.data.role === 'super_admin' || res.data.role === 'admin')
+        ) {
+          setToken(true); // Use boolean instead of actual token
+          setUser(res.data);
+          
+          settingsApi.getSettings()
+            .then((systemSettings) => {
+              dispatch(setCurrency(systemSettings.currency || 'INR'));
+            })
+            .catch((err) => console.error('Failed to fetch settings:', err));
+        }
+      } catch {
+        // No valid session — user needs to login
+        setToken(null);
+      }
 
-      // Restore active view from URL hash (#plans) or localStorage
+      // Restore active view from URL hash or localStorage
       const hashView = window.location.hash.replace('#', '').trim();
       const localView = localStorage.getItem('admin_active_view');
       const targetView = VALID_VIEWS.includes(hashView)
         ? hashView
         : (VALID_VIEWS.includes(localView) ? localView : 'dashboard');
-
       if (targetView) {
         dispatch(setActiveView(targetView));
       }
 
-      if (storedToken) {
-        settingsApi.getSettings()
-          .then((systemSettings) => {
-            dispatch(setCurrency(systemSettings.currency || 'INR'));
-          })
-          .catch((err) => console.error('Failed to fetch settings:', err))
-          .finally(() => setLoading(false));
-      } else {
-        setLoading(false);
-      }
+      setLoading(false);
+    };
+
+    if (typeof window !== 'undefined') {
+      checkAuth();
     }
   }, [dispatch]);
 
@@ -80,11 +93,24 @@ export default function Home() {
     }
   }, [activeView]);
 
-  const handleLoginSuccess = (newToken) => {
-    localStorage.setItem('admin_token', newToken);
-    setToken(newToken);
-    // Force clean layout sync on reload or state update
-    window.location.reload();
+  const handleLoginSuccess = (data) => {
+    if (data?.user?.role === 'super_admin' || data?.user?.role === 'admin') {
+      setToken(true);
+      setUser(data.user);
+      settingsApi.getSettings()
+        .then((systemSettings) => {
+          dispatch(setCurrency(systemSettings.currency || 'INR'));
+        })
+        .catch((err) => console.error('Failed to fetch settings:', err));
+    } else {
+      alert('Access denied. Admin role required.');
+    }
+  };
+
+  const handleLogout = async () => {
+    await authApi.logout();
+    setToken(null);
+    setUser(null);
   };
 
   const renderActiveView = () => {
