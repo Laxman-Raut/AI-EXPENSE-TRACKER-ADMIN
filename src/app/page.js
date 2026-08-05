@@ -20,6 +20,7 @@ import ReportsView from '@/components/views/ReportsView';
 import NotificationsView from '@/components/views/NotificationsView';
 import AiUsageView from '@/components/views/AiUsageView';
 import SettingsView from '@/components/views/SettingsView';
+import GroupsView from '@/components/views/GroupsView';
 
 const VALID_VIEWS = [
   'dashboard',
@@ -135,6 +136,8 @@ export default function Home() {
         return <AiUsageView />;
       case 'settings':
         return <SettingsView />;
+      case 'groups':
+        return <GroupsView />;
       default:
         return <DashboardOverview onViewChange={(view) => dispatch(setActiveView(view))} />;
     }

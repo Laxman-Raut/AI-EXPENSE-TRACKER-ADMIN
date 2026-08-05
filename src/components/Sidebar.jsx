@@ -22,6 +22,7 @@ import {
 const MENU_ITEMS = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { id: 'users', label: 'Users', icon: Users },
+  { id: 'groups', label: 'Groups', icon: Users },
   { id: 'plans', label: 'Plans', icon: Layers },
   { id: 'subscriptions', label: 'Subscriptions', icon: CalendarRange },
   { id: 'payments', label: 'Payments', icon: CreditCard },
