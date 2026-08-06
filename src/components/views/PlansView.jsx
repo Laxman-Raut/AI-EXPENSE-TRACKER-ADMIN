@@ -146,19 +146,9 @@ export default function PlansView() {
 
   const handleEditPlanClick = (plan) => {
     setEditingPlan(plan);
-    const planCurr = plan.currency || 'USD';
-    let initialPrice = plan.price ?? 0;
-
-    // Convert stored price into Dashboard's active currency if they differ
-    if (planCurr === 'USD' && currency === 'INR') {
-      initialPrice = Math.round(initialPrice * 85.0);
-    } else if (planCurr === 'INR' && currency === 'USD') {
-      initialPrice = Number((initialPrice / 85.0).toFixed(2));
-    }
-
     setEditForm({
       name: plan.name || '',
-      price: String(initialPrice),
+      price: plan.price !== undefined ? String(plan.price) : '',
       billingCycle: plan.billingCycle || 'monthly',
       durationDays: plan.durationDays !== undefined ? String(plan.durationDays) : '30',
       status: plan.status || 'active',
@@ -193,6 +183,9 @@ export default function PlansView() {
       description: editForm.description.trim(),
       features: featuresArray,
     };
+
+    console.log("[PlansView] Dashboard currency from useCurrency():", currency);
+    console.log("[PlansView] Sending plan update payload:", JSON.stringify({ price: payload.price, currency: payload.currency }));
 
     updatePlanMutation.mutate({ id: editingPlan._id, data: payload });
   };
@@ -326,15 +319,15 @@ export default function PlansView() {
                 <div className="mt-4 flex flex-col">
                   <div className="flex items-baseline text-foreground">
                     <span className="text-3xl font-extrabold tracking-tight">
-                      {planCurrency === 'USD' ? '$' : '₹'}{Number(plan.price || 0).toLocaleString()}
+                      {formatAmount(plan.price, planCurrency)}
                     </span>
                     <span className="ml-1 text-xs font-semibold text-muted-foreground">/{frequencyLabel}</span>
                   </div>
                   <div className="text-[11px] font-medium text-muted-foreground mt-0.5">
-                    {planCurrency === 'USD' ? (
-                      <span>≈ ₹{Math.round((plan.price || 0) * 85).toLocaleString('en-IN')} for INR users</span>
+                    {currency === planCurrency ? (
+                      <span>Base Plan Currency: {planCurrency}</span>
                     ) : (
-                      <span>≈ ${((plan.price || 0) / 85).toFixed(2)} for USD users</span>
+                      <span>Base Price: {planCurrency === 'USD' ? '$' : '₹'}{Number(plan.price || 0).toLocaleString()} {planCurrency}</span>
                     )}
                   </div>
                 </div>
