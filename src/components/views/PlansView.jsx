@@ -30,7 +30,6 @@ const EMPTY_CREATE_FORM = {
   slug: '',
   description: '',
   price: '',
-  currency: 'USD',
   billingCycle: 'monthly',
   durationDays: '30',
   icon: 'crown',
@@ -51,7 +50,6 @@ export default function PlansView() {
   const [editForm, setEditForm] = useState({
     name: '',
     price: '',
-    currency: 'USD',
     billingCycle: 'monthly',
     durationDays: '30',
     status: 'active',
@@ -90,7 +88,7 @@ export default function PlansView() {
     mutationFn: (data) => plansApi.createPlan(data),
     onSuccess: () => {
       queryClient.invalidateQueries(['plansList']);
-      alert('Plan created successfully! Mobile app users will see this plan in their preferred currency.');
+      alert(`Plan created successfully in ${currency}! Mobile app users will see auto-conversion in their own app currency.`);
       setIsCreateModalOpen(false);
       setCreateForm(EMPTY_CREATE_FORM);
     },
@@ -104,7 +102,7 @@ export default function PlansView() {
     mutationFn: ({ id, data }) => plansApi.updatePlan(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries(['plansList']);
-      alert('Plan price and details updated successfully!');
+      alert(`Plan price updated successfully in ${currency}!`);
       setEditingPlan(null);
     },
     onError: (err) => {
@@ -148,10 +146,19 @@ export default function PlansView() {
 
   const handleEditPlanClick = (plan) => {
     setEditingPlan(plan);
+    const planCurr = plan.currency || 'USD';
+    let initialPrice = plan.price ?? 0;
+
+    // Convert stored price into Dashboard's active currency if they differ
+    if (planCurr === 'USD' && currency === 'INR') {
+      initialPrice = Math.round(initialPrice * 85.0);
+    } else if (planCurr === 'INR' && currency === 'USD') {
+      initialPrice = Number((initialPrice / 85.0).toFixed(2));
+    }
+
     setEditForm({
       name: plan.name || '',
-      price: plan.price !== undefined ? String(plan.price) : '',
-      currency: plan.currency || 'USD',
+      price: String(initialPrice),
       billingCycle: plan.billingCycle || 'monthly',
       durationDays: plan.durationDays !== undefined ? String(plan.durationDays) : '30',
       status: plan.status || 'active',
@@ -179,7 +186,7 @@ export default function PlansView() {
     const payload = {
       name: editForm.name.trim(),
       price: Number(editForm.price),
-      currency: editForm.currency || 'USD',
+      currency: currency, // Saved strictly in Dashboard Settings currency
       billingCycle: editForm.billingCycle,
       durationDays: Number(editForm.durationDays),
       status: editForm.status,
@@ -221,7 +228,7 @@ export default function PlansView() {
       slug: createForm.slug.trim(),
       description: createForm.description.trim(),
       price: Number(createForm.price),
-      currency: createForm.currency || 'USD',
+      currency: currency, // Saved strictly in Dashboard Settings currency
       billingCycle: createForm.billingCycle,
       durationDays: Number(createForm.durationDays),
       icon: createForm.icon,
@@ -265,7 +272,7 @@ export default function PlansView() {
       {/* Header */}
       <div className="flex flex-col gap-1 border-b border-border pb-5">
         <h1 className="text-2xl font-bold tracking-tight text-foreground">Active Subscription Plans</h1>
-        <p className="text-sm text-muted-foreground">Manage service limits, pricing currency, and track revenue per tier.</p>
+        <p className="text-sm text-muted-foreground">Manage service limits, pricing structure, and track revenue per tier.</p>
       </div>
 
       {/* Pricing Cards Grid */}
@@ -286,7 +293,7 @@ export default function PlansView() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-bold text-foreground uppercase tracking-wider">{plan.name}</span>
-                    <span className="px-1.5 py-0.5 rounded text-[10px] font-extrabold bg-muted text-muted-foreground border border-border">
+                    <span className="px-1.5 py-0.5 rounded text-[10px] font-extrabold bg-primary/10 text-primary border border-primary/20">
                       {planCurrency}
                     </span>
                   </div>
@@ -424,7 +431,7 @@ export default function PlansView() {
             <div className="space-y-4 text-xs">
               <div className="flex items-center justify-between py-2 border-b border-border">
                 <span className="font-semibold text-muted-foreground">Dashboard Active Currency</span>
-                <span className="font-bold text-foreground bg-secondary px-2.5 py-0.5 rounded-lg border border-border">
+                <span className="font-bold text-foreground bg-primary/10 text-primary px-2.5 py-0.5 rounded-lg border border-primary/20">
                   {currency === 'USD' ? 'USD ($)' : 'INR (₹)'}
                 </span>
               </div>
@@ -476,19 +483,15 @@ export default function PlansView() {
                 />
               </div>
 
-              {/* Price & Currency */}
+              {/* Price with Static Dashboard Currency Notation Badge (Dropdown Removed) */}
               <div className="flex flex-col gap-1.5 col-span-2">
-                <label className="font-semibold text-primary font-bold">Plan Price & Currency <span className="text-rose-500">*</span></label>
-                <div className="flex gap-2">
-                  <select
-                    name="currency"
-                    value={editForm.currency}
-                    onChange={handleEditFormChange}
-                    className="h-9 px-3 rounded-lg border-2 border-primary bg-background text-foreground text-xs font-bold focus:outline-none focus:ring-1 focus:ring-primary"
-                  >
-                    <option value="USD">USD ($)</option>
-                    <option value="INR">INR (₹)</option>
-                  </select>
+                <label className="font-semibold text-primary font-bold">
+                  Plan Price ({currency === 'USD' ? 'USD $' : 'INR ₹'}) <span className="text-rose-500">*</span>
+                </label>
+                <div className="flex items-center gap-2">
+                  <div className="h-9 px-3 flex items-center justify-center rounded-lg border-2 border-primary bg-primary/10 text-primary text-xs font-extrabold select-none flex-shrink-0">
+                    {currency === 'USD' ? 'USD ($)' : 'INR (₹)'}
+                  </div>
                   <input
                     type="number"
                     name="price"
@@ -496,13 +499,13 @@ export default function PlansView() {
                     onChange={handleEditFormChange}
                     min="0"
                     step="any"
-                    placeholder="e.g. 20 or 1499"
+                    placeholder={currency === 'USD' ? "e.g. 20" : "e.g. 1499"}
                     className="flex-1 h-9 px-3 rounded-lg border-2 border-primary bg-background text-foreground text-sm font-bold focus:outline-none focus:ring-2 focus:ring-primary"
                     required
                   />
                 </div>
                 <span className="text-[10px] text-muted-foreground">
-                  Mobile app users will automatically see this plan price converted into their own preferred currency (INR users see ₹, USD users see $).
+                  Price is set in {currency === 'USD' ? 'US Dollars ($)' : 'Indian Rupees (₹)'} (Active Dashboard Settings). Mobile app users will see auto-conversion in their own phone currency.
                 </span>
               </div>
 
@@ -725,25 +728,21 @@ export default function PlansView() {
               <span className="text-[10px] text-muted-foreground">Lowercase, no spaces. Used to identify plan internally (e.g. "pro", "basic").</span>
             </div>
 
-            {/* Price & Currency */}
+            {/* Price with Static Dashboard Currency Notation Badge (Dropdown Removed) */}
             <div className="flex flex-col gap-1.5 col-span-2">
-              <label className="font-semibold text-primary font-bold">Price & Currency <span className="text-rose-500">*</span></label>
-              <div className="flex gap-2">
-                <select
-                  name="currency"
-                  value={createForm.currency}
-                  onChange={handleCreateFormChange}
-                  className="h-9 px-3 rounded-lg border-2 border-primary bg-background text-foreground text-xs font-bold focus:outline-none focus:ring-1 focus:ring-primary"
-                >
-                  <option value="USD">USD ($)</option>
-                  <option value="INR">INR (₹)</option>
-                </select>
+              <label className="font-semibold text-primary font-bold">
+                Price ({currency === 'USD' ? 'USD $' : 'INR ₹'}) <span className="text-rose-500">*</span>
+              </label>
+              <div className="flex items-center gap-2">
+                <div className="h-9 px-3 flex items-center justify-center rounded-lg border-2 border-primary bg-primary/10 text-primary text-xs font-extrabold select-none flex-shrink-0">
+                  {currency === 'USD' ? 'USD ($)' : 'INR (₹)'}
+                </div>
                 <input
                   type="number"
                   name="price"
                   value={createForm.price}
                   onChange={handleCreateFormChange}
-                  placeholder="e.g. 20 or 1499"
+                  placeholder={currency === 'USD' ? "e.g. 20" : "e.g. 1499"}
                   min="0"
                   step="any"
                   className="flex-1 h-9 px-3 rounded-lg border-2 border-primary bg-background text-foreground text-sm font-bold focus:outline-none focus:ring-2 focus:ring-primary"
