@@ -259,7 +259,7 @@ export default function Navbar() {
                 <button
                   onClick={async () => {
                     await authApi.logout();
-                    window.location.reload();
+                    window.location.href = '/login';
                   }}
                   className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-xs font-medium text-destructive hover:bg-destructive/10 transition-all"
                 >

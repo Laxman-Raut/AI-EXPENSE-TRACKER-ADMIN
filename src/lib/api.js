@@ -73,8 +73,11 @@ apiClient.interceptors.response.use(
         processQueue(refreshError, false);
 
         if (typeof window !== 'undefined') {
-          // Clean up any legacy localStorage tokens
+          // Clean up any legacy localStorage tokens and redirect to login
           localStorage.removeItem('admin_token');
+          if (window.location.pathname !== '/login') {
+            window.location.href = '/login';
+          }
         }
 
         return Promise.reject(refreshError);
