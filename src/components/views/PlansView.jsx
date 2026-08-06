@@ -316,11 +316,20 @@ export default function PlansView() {
                 </div>
                 
                 {/* Pricing info */}
-                <div className="mt-4 flex items-baseline text-foreground">
-                  <span className="text-3xl font-extrabold tracking-tight">
-                    {formatAmount(plan.price, planCurrency)}
-                  </span>
-                  <span className="ml-1 text-xs font-semibold text-muted-foreground">/{frequencyLabel}</span>
+                <div className="mt-4 flex flex-col">
+                  <div className="flex items-baseline text-foreground">
+                    <span className="text-3xl font-extrabold tracking-tight">
+                      {planCurrency === 'USD' ? '$' : '₹'}{Number(plan.price || 0).toLocaleString()}
+                    </span>
+                    <span className="ml-1 text-xs font-semibold text-muted-foreground">/{frequencyLabel}</span>
+                  </div>
+                  <div className="text-[11px] font-medium text-muted-foreground mt-0.5">
+                    {planCurrency === 'USD' ? (
+                      <span>≈ ₹{Math.round((plan.price || 0) * 85).toLocaleString('en-IN')} for INR users</span>
+                    ) : (
+                      <span>≈ ${((plan.price || 0) / 85).toFixed(2)} for USD users</span>
+                    )}
+                  </div>
                 </div>
                 
                 <p className="mt-3.5 text-xs text-muted-foreground leading-relaxed">{plan.description}</p>
