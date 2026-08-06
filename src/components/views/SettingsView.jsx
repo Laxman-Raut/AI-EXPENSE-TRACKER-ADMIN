@@ -12,14 +12,14 @@ import {
   Save,
   User,
   BellRing,
-  Database,
   Sparkles,
   Eye,
   EyeOff,
   Cpu,
   ShieldCheck,
   CheckCircle2,
-  Settings as SettingsIcon
+  Settings as SettingsIcon,
+  DollarSign
 } from 'lucide-react';
 
 export default function SettingsView() {
@@ -55,6 +55,7 @@ export default function SettingsView() {
   const aiReceiptScanner = watch('aiReceiptScanner');
   const voiceTransactionScanner = watch('voiceTransactionScanner');
   const aiChatbotAdvisor = watch('aiChatbotAdvisor');
+  const selectedCurrency = watch('currency');
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -67,7 +68,6 @@ export default function SettingsView() {
           email: profile?.email || '',
           role: profile?.role || '',
           avatar: profile?.avatar || '',
-          // Assuming systemSettings maps to these:
           geminiModel: systemSettings?.geminiModel || 'gemini-flash-latest',
           geminiApiKey: systemSettings?.geminiApiKey || '',
           aiReceiptScanner: systemSettings?.aiReceiptScanner ?? true,
@@ -90,19 +90,25 @@ export default function SettingsView() {
 
   const onSubmit = async (data) => {
     try {
-      // Save profile
-      await authApi.updateProfile({
-        fullName: data.name,
-        email: data.email
-      });
-      dispatch(updateProfile({
-        name: data.name,
-        email: data.email,
-        role: data.role,
-        avatar: data.avatar
-      }));
+      // Save profile ONLY if name is provided to avoid Mongoose fullName validation error
+      if (data.name && data.name.trim()) {
+        try {
+          await authApi.updateProfile({
+            fullName: data.name.trim(),
+            email: data.email
+          });
+          dispatch(updateProfile({
+            name: data.name.trim(),
+            email: data.email,
+            role: data.role,
+            avatar: data.avatar
+          }));
+        } catch (profileErr) {
+          console.warn('Profile update warning:', profileErr?.message);
+        }
+      }
       
-      // Save settings
+      // Save system settings
       await settingsApi.updateSettings({
         geminiModel: data.geminiModel,
         geminiApiKey: data.geminiApiKey,
@@ -116,9 +122,10 @@ export default function SettingsView() {
         currency: data.currency,
       });
 
+      // Update Dashboard Redux UI Currency State
       dispatch(setCurrency(data.currency));
 
-      alert('Admin configuration successfully updated on database.');
+      alert(`Settings updated! Dashboard currency set to ${data.currency}.`);
     } catch (error) {
       alert(error?.response?.data?.message || error.message || 'Failed to save settings.');
     }
@@ -143,7 +150,7 @@ export default function SettingsView() {
           <SettingsIcon className="text-primary" />
           Settings & Configuration
         </h1>
-        <p className="text-sm text-muted-foreground">Manage your AI models, system preferences, and security settings.</p>
+        <p className="text-sm text-muted-foreground">Manage your AI models, system preferences, and dashboard display currency.</p>
       </div>
 
       {/* Tabs */}
@@ -288,6 +295,7 @@ export default function SettingsView() {
                 <input
                   type="text"
                   {...register('name')}
+                  placeholder="Super Admin"
                   className="w-full h-10 px-3 rounded-lg border border-border bg-background text-sm font-medium text-foreground focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all"
                 />
               </div>
@@ -297,6 +305,7 @@ export default function SettingsView() {
                 <input
                   type="email"
                   {...register('email')}
+                  placeholder="admin@expense.ai"
                   className="w-full h-10 px-3 rounded-lg border border-border bg-background text-sm font-medium text-foreground focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all"
                 />
               </div>
@@ -350,14 +359,20 @@ export default function SettingsView() {
                   </label>
                 </div>
 
-                <div className="flex items-center justify-between p-4 rounded-lg bg-muted/20 border border-border">
+                {/* Dashboard Display Currency Switcher */}
+                <div className="flex items-center justify-between p-4 rounded-lg bg-primary/5 border border-primary/20">
                   <div className="pr-4">
-                    <h4 className="text-sm font-semibold text-foreground">Currency</h4>
-                    <p className="text-xs text-muted-foreground mt-1">Select the global currency for the dashboard.</p>
+                    <h4 className="text-sm font-bold text-foreground flex items-center gap-2">
+                      <DollarSign size={16} className="text-primary" />
+                      Dashboard Display Currency
+                    </h4>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Controls how amounts are displayed in the Admin Dashboard. (Mobile App users retain their own currency choices).
+                    </p>
                   </div>
                   <select
                     {...register('currency')}
-                    className="h-10 px-3 rounded-lg border border-border bg-background text-sm font-medium text-foreground focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all"
+                    className="h-10 px-3 rounded-lg border-2 border-primary bg-background text-sm font-bold text-foreground focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all"
                   >
                     <option value="INR">INR (₹) — Indian Rupee</option>
                     <option value="USD">USD ($) — US Dollar</option>

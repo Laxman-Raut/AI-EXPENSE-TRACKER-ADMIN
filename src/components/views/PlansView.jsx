@@ -7,7 +7,7 @@ import { dashboardApi } from '@/services/dashboard.api';
 import { useCurrency } from '@/hooks/useCurrency';
 import { ChartSkeleton } from '../ui/Skeleton';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, CartesianGrid } from 'recharts';
-import { Layers, ShieldCheck, Zap, Server, Shield, ShieldAlert, ChevronRight, Trash2, Settings, Pencil, Edit3 } from 'lucide-react';
+import { Layers, ShieldCheck, Zap, Server, ShieldAlert, ChevronRight, Trash2, Pencil } from 'lucide-react';
 import Dialog from '../ui/Dialog';
 
 const ICON_MAP = {
@@ -30,6 +30,7 @@ const EMPTY_CREATE_FORM = {
   slug: '',
   description: '',
   price: '',
+  currency: 'USD',
   billingCycle: 'monthly',
   durationDays: '30',
   icon: 'crown',
@@ -50,6 +51,7 @@ export default function PlansView() {
   const [editForm, setEditForm] = useState({
     name: '',
     price: '',
+    currency: 'USD',
     billingCycle: 'monthly',
     durationDays: '30',
     status: 'active',
@@ -88,7 +90,7 @@ export default function PlansView() {
     mutationFn: (data) => plansApi.createPlan(data),
     onSuccess: () => {
       queryClient.invalidateQueries(['plansList']);
-      alert('Plan created successfully! Mobile app users will now see this plan.');
+      alert('Plan created successfully! Mobile app users will see this plan in their preferred currency.');
       setIsCreateModalOpen(false);
       setCreateForm(EMPTY_CREATE_FORM);
     },
@@ -102,7 +104,7 @@ export default function PlansView() {
     mutationFn: ({ id, data }) => plansApi.updatePlan(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries(['plansList']);
-      alert('Plan price and details updated successfully! Mobile app users will see the updated price immediately.');
+      alert('Plan price and details updated successfully!');
       setEditingPlan(null);
     },
     onError: (err) => {
@@ -146,10 +148,10 @@ export default function PlansView() {
 
   const handleEditPlanClick = (plan) => {
     setEditingPlan(plan);
-    const initialPrice = currency === 'INR' ? convertAmount(plan.price) : (plan.price ?? 0);
     setEditForm({
       name: plan.name || '',
-      price: String(initialPrice),
+      price: plan.price !== undefined ? String(plan.price) : '',
+      currency: plan.currency || 'USD',
       billingCycle: plan.billingCycle || 'monthly',
       durationDays: plan.durationDays !== undefined ? String(plan.durationDays) : '30',
       status: plan.status || 'active',
@@ -174,13 +176,10 @@ export default function PlansView() {
       .map((f) => f.trim())
       .filter(Boolean);
 
-    const enteredPrice = Number(editForm.price);
-    const baseUsdPrice = currency === 'INR' ? (enteredPrice / 85.0) : enteredPrice;
-
     const payload = {
       name: editForm.name.trim(),
-      price: parseFloat(baseUsdPrice.toFixed(2)),
-      currency: 'USD',
+      price: Number(editForm.price),
+      currency: editForm.currency || 'USD',
       billingCycle: editForm.billingCycle,
       durationDays: Number(editForm.durationDays),
       status: editForm.status,
@@ -217,15 +216,12 @@ export default function PlansView() {
       .map((f) => f.trim())
       .filter(Boolean);
 
-    const enteredPrice = Number(createForm.price);
-    const baseUsdPrice = currency === 'INR' ? (enteredPrice / 85.0) : enteredPrice;
-
     const payload = {
       name: createForm.name.trim(),
       slug: createForm.slug.trim(),
       description: createForm.description.trim(),
-      price: parseFloat(baseUsdPrice.toFixed(2)),
-      currency: 'USD',
+      price: Number(createForm.price),
+      currency: createForm.currency || 'USD',
       billingCycle: createForm.billingCycle,
       durationDays: Number(createForm.durationDays),
       icon: createForm.icon,
@@ -238,9 +234,10 @@ export default function PlansView() {
   const chartData = React.useMemo(() => {
     return (summary?.pie || []).map(item => ({
       ...item,
-      value: convertAmount(item.value)
+      value: convertAmount(item.value, 'USD')
     }));
   }, [summary?.pie, convertAmount]);
+  
   const isLoading = plansLoading || summaryLoading;
 
   if (plansError) {
@@ -268,7 +265,7 @@ export default function PlansView() {
       {/* Header */}
       <div className="flex flex-col gap-1 border-b border-border pb-5">
         <h1 className="text-2xl font-bold tracking-tight text-foreground">Active Subscription Plans</h1>
-        <p className="text-sm text-muted-foreground">Manage service limits, update pricing structure, and track revenue per tier.</p>
+        <p className="text-sm text-muted-foreground">Manage service limits, pricing currency, and track revenue per tier.</p>
       </div>
 
       {/* Pricing Cards Grid */}
@@ -277,6 +274,7 @@ export default function PlansView() {
           const Icon = ICON_MAP[plan.icon] || Zap;
           const colorClass = COLOR_MAP[plan.slug] || 'text-slate-500 bg-slate-500/10';
           const frequencyLabel = plan.billingCycle === 'monthly' ? 'month' : (plan.billingCycle === 'yearly' ? 'year' : 'forever');
+          const planCurrency = plan.currency || 'USD';
           
           return (
             <div 
@@ -286,7 +284,12 @@ export default function PlansView() {
               <div>
                 {/* Header */}
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-foreground uppercase tracking-wider">{plan.name}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-foreground uppercase tracking-wider">{plan.name}</span>
+                    <span className="px-1.5 py-0.5 rounded text-[10px] font-extrabold bg-muted text-muted-foreground border border-border">
+                      {planCurrency}
+                    </span>
+                  </div>
                   <div className="flex items-center gap-1.5">
                     <button
                       onClick={() => handleEditPlanClick(plan)}
@@ -314,7 +317,9 @@ export default function PlansView() {
                 
                 {/* Pricing info */}
                 <div className="mt-4 flex items-baseline text-foreground">
-                  <span className="text-3xl font-extrabold tracking-tight">{formatAmount(plan.price)}</span>
+                  <span className="text-3xl font-extrabold tracking-tight">
+                    {formatAmount(plan.price, planCurrency)}
+                  </span>
                   <span className="ml-1 text-xs font-semibold text-muted-foreground">/{frequencyLabel}</span>
                 </div>
                 
@@ -409,8 +414,10 @@ export default function PlansView() {
             
             <div className="space-y-4 text-xs">
               <div className="flex items-center justify-between py-2 border-b border-border">
-                <span className="font-semibold text-muted-foreground">Global Currency</span>
-                <span className="font-bold text-foreground bg-secondary px-2.5 py-0.5 rounded-lg border border-border">{currency === 'USD' ? 'USD ($)' : 'INR (₹)'}</span>
+                <span className="font-semibold text-muted-foreground">Dashboard Active Currency</span>
+                <span className="font-bold text-foreground bg-secondary px-2.5 py-0.5 rounded-lg border border-border">
+                  {currency === 'USD' ? 'USD ($)' : 'INR (₹)'}
+                </span>
               </div>
               <div className="flex items-center justify-between py-2 border-b border-border">
                 <span className="font-semibold text-muted-foreground">Active Discount Codes</span>
@@ -460,19 +467,34 @@ export default function PlansView() {
                 />
               </div>
 
-              {/* Price */}
+              {/* Price & Currency */}
               <div className="flex flex-col gap-1.5 col-span-2">
-                <label className="font-semibold text-primary font-bold">Plan Price ({symbol}) <span className="text-rose-500">*</span></label>
-                <input
-                  type="number"
-                  name="price"
-                  value={editForm.price}
-                  onChange={handleEditFormChange}
-                  min="0"
-                  className="h-9 px-3 rounded-lg border-2 border-primary bg-background text-foreground text-sm font-bold focus:outline-none focus:ring-2 focus:ring-primary"
-                  required
-                />
-                <span className="text-[10px] text-muted-foreground">Updating the price will instantly reflect on mobile app subscription screen.</span>
+                <label className="font-semibold text-primary font-bold">Plan Price & Currency <span className="text-rose-500">*</span></label>
+                <div className="flex gap-2">
+                  <select
+                    name="currency"
+                    value={editForm.currency}
+                    onChange={handleEditFormChange}
+                    className="h-9 px-3 rounded-lg border-2 border-primary bg-background text-foreground text-xs font-bold focus:outline-none focus:ring-1 focus:ring-primary"
+                  >
+                    <option value="USD">USD ($)</option>
+                    <option value="INR">INR (₹)</option>
+                  </select>
+                  <input
+                    type="number"
+                    name="price"
+                    value={editForm.price}
+                    onChange={handleEditFormChange}
+                    min="0"
+                    step="any"
+                    placeholder="e.g. 20 or 1499"
+                    className="flex-1 h-9 px-3 rounded-lg border-2 border-primary bg-background text-foreground text-sm font-bold focus:outline-none focus:ring-2 focus:ring-primary"
+                    required
+                  />
+                </div>
+                <span className="text-[10px] text-muted-foreground">
+                  Mobile app users will automatically see this plan price converted into their own preferred currency (INR users see ₹, USD users see $).
+                </span>
               </div>
 
               {/* Billing Cycle */}
@@ -694,19 +716,31 @@ export default function PlansView() {
               <span className="text-[10px] text-muted-foreground">Lowercase, no spaces. Used to identify plan internally (e.g. "pro", "basic").</span>
             </div>
 
-            {/* Price */}
-            <div className="flex flex-col gap-1.5">
-              <label className="font-semibold text-muted-foreground">Price ({symbol}) <span className="text-rose-500">*</span></label>
-              <input
-                type="number"
-                name="price"
-                value={createForm.price}
-                onChange={handleCreateFormChange}
-                placeholder="0"
-                min="0"
-                className="h-9 px-3 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-                required
-              />
+            {/* Price & Currency */}
+            <div className="flex flex-col gap-1.5 col-span-2">
+              <label className="font-semibold text-primary font-bold">Price & Currency <span className="text-rose-500">*</span></label>
+              <div className="flex gap-2">
+                <select
+                  name="currency"
+                  value={createForm.currency}
+                  onChange={handleCreateFormChange}
+                  className="h-9 px-3 rounded-lg border-2 border-primary bg-background text-foreground text-xs font-bold focus:outline-none focus:ring-1 focus:ring-primary"
+                >
+                  <option value="USD">USD ($)</option>
+                  <option value="INR">INR (₹)</option>
+                </select>
+                <input
+                  type="number"
+                  name="price"
+                  value={createForm.price}
+                  onChange={handleCreateFormChange}
+                  placeholder="e.g. 20 or 1499"
+                  min="0"
+                  step="any"
+                  className="flex-1 h-9 px-3 rounded-lg border-2 border-primary bg-background text-foreground text-sm font-bold focus:outline-none focus:ring-2 focus:ring-primary"
+                  required
+                />
+              </div>
             </div>
 
             {/* Billing Cycle */}
