@@ -42,6 +42,28 @@ export default function DashboardShell({ initialView }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // 1. Determine active view synchronously from URL path, props, hash, or localStorage before any async work
+    const pathSegments = typeof window !== 'undefined' ? window.location.pathname.split('/').filter(Boolean) : [];
+    const pathView = pathSegments.length > 0 ? pathSegments[pathSegments.length - 1] : '';
+    const hashView = typeof window !== 'undefined' ? window.location.hash.replace('#', '').trim() : '';
+    const localView = typeof window !== 'undefined' ? localStorage.getItem('admin_active_view') : '';
+
+    let targetView = 'dashboard';
+    if (pathView && VALID_VIEWS.includes(pathView)) {
+      targetView = pathView;
+    } else if (initialView && VALID_VIEWS.includes(initialView)) {
+      targetView = initialView;
+    } else if (hashView && VALID_VIEWS.includes(hashView)) {
+      targetView = hashView;
+    } else if (localView && VALID_VIEWS.includes(localView)) {
+      targetView = localView;
+    }
+
+    if (targetView) {
+      dispatch(setActiveView(targetView));
+    }
+
+    // 2. Perform authentication and settings check
     const checkAuth = async () => {
       try {
         const res = await authApi.getProfile();
@@ -62,38 +84,17 @@ export default function DashboardShell({ initialView }) {
         // Unauthenticated session — redirect to login
         console.warn('[DashboardShell] Session verification failed:', err.message);
         window.location.href = '/login';
+      } finally {
+        setLoading(false);
       }
-
-      // Determine view: Priority 1: URL Path, Priority 2: initialView prop, Priority 3: URL Hash, Priority 4: localStorage
-      const pathSegments = typeof window !== 'undefined' ? window.location.pathname.split('/').filter(Boolean) : [];
-      const pathView = pathSegments.length > 0 ? pathSegments[pathSegments.length - 1] : '';
-      const hashView = typeof window !== 'undefined' ? window.location.hash.replace('#', '').trim() : '';
-      const localView = typeof window !== 'undefined' ? localStorage.getItem('admin_active_view') : '';
-
-      let targetView = 'dashboard';
-      if (pathView && VALID_VIEWS.includes(pathView)) {
-        targetView = pathView;
-      } else if (initialView && VALID_VIEWS.includes(initialView)) {
-        targetView = initialView;
-      } else if (hashView && VALID_VIEWS.includes(hashView)) {
-        targetView = hashView;
-      } else if (localView && VALID_VIEWS.includes(localView)) {
-        targetView = localView;
-      }
-
-      if (targetView) {
-        dispatch(setActiveView(targetView));
-      }
-
-      setLoading(false);
     };
 
     checkAuth();
   }, [dispatch, initialView]);
 
-  // Sync activeView to URL path & localStorage so page refresh stays on exact page
+  // Sync activeView to URL path & localStorage ONLY AFTER loading is complete
   useEffect(() => {
-    if (typeof window !== 'undefined' && activeView) {
+    if (!loading && typeof window !== 'undefined' && activeView) {
       localStorage.setItem('admin_active_view', activeView);
       
       const targetPath = activeView === 'dashboard' ? '/dashboard' : `/dashboard/${activeView}`;
@@ -101,7 +102,7 @@ export default function DashboardShell({ initialView }) {
         window.history.pushState(null, '', targetPath);
       }
     }
-  }, [activeView]);
+  }, [activeView, loading]);
 
   // Support browser Back & Forward button navigation
   useEffect(() => {
