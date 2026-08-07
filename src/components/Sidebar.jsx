@@ -16,13 +16,15 @@ import {
   Settings, 
   ChevronLeft, 
   ChevronRight,
-  TrendingDown
+  TrendingDown,
+  Ticket
 } from 'lucide-react';
 
 const MENU_ITEMS = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { id: 'users', label: 'Users', icon: Users },
   { id: 'plans', label: 'Plans', icon: Layers },
+  { id: 'coupons', label: 'Coupons', icon: Ticket },
   { id: 'subscriptions', label: 'Subscriptions', icon: CalendarRange },
   { id: 'payments', label: 'Payments', icon: CreditCard },
   { id: 'analytics', label: 'Analytics', icon: TrendingUp },

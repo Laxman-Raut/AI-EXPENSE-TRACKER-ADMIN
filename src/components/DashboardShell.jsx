@@ -12,6 +12,7 @@ import Navbar from '@/components/Navbar';
 import DashboardOverview from '@/components/views/DashboardOverview';
 import UsersView from '@/components/views/UsersView';
 import PlansView from '@/components/views/PlansView';
+import CouponsView from '@/components/views/CouponsView';
 import SubscriptionsView from '@/components/views/SubscriptionsView';
 import PaymentsView from '@/components/views/PaymentsView';
 import AnalyticsView from '@/components/views/AnalyticsView';
@@ -24,6 +25,7 @@ const VALID_VIEWS = [
   'dashboard',
   'users',
   'plans',
+  'coupons',
   'subscriptions',
   'payments',
   'analytics',
@@ -127,6 +129,8 @@ export default function DashboardShell({ initialView }) {
         return <UsersView />;
       case 'plans':
         return <PlansView />;
+      case 'coupons':
+        return <CouponsView />;
       case 'subscriptions':
         return <SubscriptionsView />;
       case 'payments':
