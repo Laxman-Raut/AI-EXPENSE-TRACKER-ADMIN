@@ -24,6 +24,7 @@ import GroupsView from '@/components/views/GroupsView';
 const VALID_VIEWS = [
   'dashboard',
   'users',
+  'groups',
   'plans',
   'subscriptions',
   'payments',
@@ -63,15 +64,22 @@ export default function DashboardShell({ initialView }) {
         window.location.href = '/login';
       }
 
-      // Restore active view from prop, URL hash, or localStorage
+      // Determine view: Priority 1: URL Path, Priority 2: initialView prop, Priority 3: URL Hash, Priority 4: localStorage
+      const pathSegments = typeof window !== 'undefined' ? window.location.pathname.split('/').filter(Boolean) : [];
+      const pathView = pathSegments.length > 0 ? pathSegments[pathSegments.length - 1] : '';
       const hashView = typeof window !== 'undefined' ? window.location.hash.replace('#', '').trim() : '';
       const localView = typeof window !== 'undefined' ? localStorage.getItem('admin_active_view') : '';
-      
-      const targetView = initialView && VALID_VIEWS.includes(initialView)
-        ? initialView
-        : (VALID_VIEWS.includes(hashView)
-          ? hashView
-          : (VALID_VIEWS.includes(localView) ? localView : 'dashboard'));
+
+      let targetView = 'dashboard';
+      if (pathView && VALID_VIEWS.includes(pathView)) {
+        targetView = pathView;
+      } else if (initialView && VALID_VIEWS.includes(initialView)) {
+        targetView = initialView;
+      } else if (hashView && VALID_VIEWS.includes(hashView)) {
+        targetView = hashView;
+      } else if (localView && VALID_VIEWS.includes(localView)) {
+        targetView = localView;
+      }
 
       if (targetView) {
         dispatch(setActiveView(targetView));
@@ -83,15 +91,34 @@ export default function DashboardShell({ initialView }) {
     checkAuth();
   }, [dispatch, initialView]);
 
-  // Sync activeView to URL hash & localStorage
+  // Sync activeView to URL path & localStorage so page refresh stays on exact page
   useEffect(() => {
     if (typeof window !== 'undefined' && activeView) {
       localStorage.setItem('admin_active_view', activeView);
-      if (window.location.hash !== `#${activeView}`) {
-        window.history.replaceState(null, '', `#${activeView}`);
+      
+      const targetPath = activeView === 'dashboard' ? '/dashboard' : `/dashboard/${activeView}`;
+      if (window.location.pathname !== targetPath) {
+        window.history.pushState(null, '', targetPath);
       }
     }
   }, [activeView]);
+
+  // Support browser Back & Forward button navigation
+  useEffect(() => {
+    const handlePopState = () => {
+      const pathSegments = window.location.pathname.split('/').filter(Boolean);
+      const pathView = pathSegments.length > 0 ? pathSegments[pathSegments.length - 1] : '';
+      
+      if (pathView && VALID_VIEWS.includes(pathView)) {
+        dispatch(setActiveView(pathView));
+      } else {
+        dispatch(setActiveView('dashboard'));
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [dispatch]);
 
   const renderActiveView = () => {
     switch (activeView) {
@@ -99,6 +126,8 @@ export default function DashboardShell({ initialView }) {
         return <DashboardOverview onViewChange={(view) => dispatch(setActiveView(view))} />;
       case 'users':
         return <UsersView />;
+      case 'groups':
+        return <GroupsView />;
       case 'plans':
         return <PlansView />;
       case 'subscriptions':
@@ -115,8 +144,6 @@ export default function DashboardShell({ initialView }) {
         return <AiUsageView />;
       case 'settings':
         return <SettingsView />;
-      case 'groups':
-        return <GroupsView />;
       default:
         return <DashboardOverview onViewChange={(view) => dispatch(setActiveView(view))} />;
     }

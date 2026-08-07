@@ -1,9 +1,10 @@
 'use client';
 
-import React from 'react';
+import React, { use } from 'react';
 import DashboardShell from '@/components/DashboardShell';
 
 export default function DynamicAdminPage({ params }) {
-  const slug = params?.slug?.[0] || 'dashboard';
+  const resolvedParams = use(params);
+  const slug = resolvedParams?.slug?.[0] || 'dashboard';
   return <DashboardShell initialView={slug} />;
 }
