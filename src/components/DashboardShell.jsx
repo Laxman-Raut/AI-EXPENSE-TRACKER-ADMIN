@@ -19,12 +19,10 @@ import ReportsView from '@/components/views/ReportsView';
 import NotificationsView from '@/components/views/NotificationsView';
 import AiUsageView from '@/components/views/AiUsageView';
 import SettingsView from '@/components/views/SettingsView';
-import GroupsView from '@/components/views/GroupsView';
 
 const VALID_VIEWS = [
   'dashboard',
   'users',
-  'groups',
   'plans',
   'subscriptions',
   'payments',
@@ -127,8 +125,6 @@ export default function DashboardShell({ initialView }) {
         return <DashboardOverview onViewChange={(view) => dispatch(setActiveView(view))} />;
       case 'users':
         return <UsersView />;
-      case 'groups':
-        return <GroupsView />;
       case 'plans':
         return <PlansView />;
       case 'subscriptions':
