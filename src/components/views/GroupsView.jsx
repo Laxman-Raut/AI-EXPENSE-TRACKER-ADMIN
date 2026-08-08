@@ -4,10 +4,13 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { groupsApi } from '@/services/groups.api';
 import { splitRequestsApi } from '@/services/splitRequests.api';
+import { useCurrency } from '@/hooks/useCurrency';
 import { Users, Plus, Search, Trash2, Receipt, ShieldAlert, X } from 'lucide-react';
 
 export default function GroupsView() {
+  const { formatAmount } = useCurrency();
   const queryClient = useQueryClient();
+
   const [search, setSearch] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState(null);
@@ -189,7 +192,7 @@ export default function GroupsView() {
                     <div key={split._id} className="p-3.5 bg-background border border-border rounded-lg space-y-2">
                       <div className="flex items-center justify-between">
                         <h4 className="font-semibold text-sm text-foreground">{split.title}</h4>
-                        <span className="font-bold text-primary text-sm">${Number(split.totalAmount || split.amount || 0).toFixed(2)}</span>
+                        <span className="font-bold text-primary text-sm">{formatAmount(split.totalAmount || split.amount || 0, 'INR')}</span>
                       </div>
                       <div className="flex items-center justify-between text-xs text-muted-foreground">
                         <span>Paid by {paidByObj.fullName || 'Member'}</span>

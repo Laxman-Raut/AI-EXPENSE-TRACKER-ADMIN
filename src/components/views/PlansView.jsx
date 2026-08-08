@@ -234,7 +234,7 @@ export default function PlansView() {
   const chartData = React.useMemo(() => {
     return (summary?.pie || []).map(item => ({
       ...item,
-      value: convertAmount(item.value, 'USD')
+      value: convertAmount(item.value, 'INR')
     }));
   }, [summary?.pie, convertAmount]);
   
@@ -248,7 +248,7 @@ export default function PlansView() {
         </div>
         <h3 className="text-sm font-bold text-foreground">API Connection Error</h3>
         <p className="text-xs text-muted-foreground mt-1 max-w-xs mx-auto">
-          Could not retrieve subscription plans. Verify your backend is running.
+          Could not retrieve administration stats. Verify your backend server is active and try again.
         </p>
         <button 
           onClick={() => refetchPlans()} 
@@ -274,7 +274,7 @@ export default function PlansView() {
           const Icon = ICON_MAP[plan.icon] || Zap;
           const colorClass = COLOR_MAP[plan.slug] || 'text-slate-500 bg-slate-500/10';
           const frequencyLabel = plan.billingCycle === 'monthly' ? 'month' : (plan.billingCycle === 'yearly' ? 'year' : 'forever');
-          const planCurrency = plan.currency || 'USD';
+          const baseCurrency = plan.currency || plan.baseCurrency || 'INR';
           
           return (
             <div 
@@ -287,7 +287,7 @@ export default function PlansView() {
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-bold text-foreground uppercase tracking-wider">{plan.name}</span>
                     <span className="px-1.5 py-0.5 rounded text-[10px] font-extrabold bg-primary/10 text-primary border border-primary/20">
-                      {planCurrency}
+                      Base: {baseCurrency}
                     </span>
                   </div>
                   <div className="flex items-center gap-1.5">
@@ -319,12 +319,17 @@ export default function PlansView() {
                 <div className="mt-4 flex flex-col">
                   <div className="flex items-baseline text-foreground">
                     <span className="text-3xl font-extrabold tracking-tight">
-                      {(plan.baseCurrency || planCurrency) === 'USD' ? '$' : '₹'}{Number(plan.basePrice || plan.price || 0).toLocaleString()}
+                      {formatAmount(plan.price || plan.basePrice || 0, baseCurrency)}
                     </span>
                     <span className="ml-1 text-xs font-semibold text-muted-foreground">/{frequencyLabel}</span>
                   </div>
                   <div className="text-[11px] font-medium text-muted-foreground mt-0.5">
-                    <span>Base Currency: {plan.baseCurrency || planCurrency}</span>
+                    <span>Base Currency: {baseCurrency}</span>
+                    {baseCurrency !== currency && (
+                      <span className="ml-1 text-muted-foreground/80">
+                        (Original: {baseCurrency === 'USD' ? '$' : '₹'}{plan.price || plan.basePrice})
+                      </span>
+                    )}
                   </div>
                 </div>
                 
