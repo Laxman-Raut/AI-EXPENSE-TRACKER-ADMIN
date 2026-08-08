@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { setActiveView, setCurrency } from '@/store/uiSlice';
+import { setActiveView, setCurrency, setExchangeRate, setRatesMap } from '@/store/uiSlice';
 import { settingsApi } from '@/services/settings.api';
 import { authApi } from '@/services/auth.api';
 import Sidebar from '@/components/Sidebar';
@@ -76,6 +76,24 @@ export default function DashboardShell({ initialView }) {
               dispatch(setCurrency(systemSettings.currency || 'INR'));
             })
             .catch((err) => console.error('Failed to fetch settings:', err));
+
+          // Fetch live exchange rates for dynamic currency conversion
+          import('@/lib/api').then(({ default: apiClient }) => {
+            apiClient.get('/v1/currency/rates')
+              .then((res) => {
+                if (res.data?.success && res.data?.data) {
+                  const rateData = res.data.data;
+                  if (rateData.usdToInr) {
+                    dispatch(setExchangeRate(rateData.usdToInr));
+                  }
+                  if (rateData.rates) {
+                    dispatch(setRatesMap(rateData.rates));
+                  }
+                  console.log('[DashboardShell] Live exchange rates loaded:', rateData.usdToInr);
+                }
+              })
+              .catch((err) => console.warn('[DashboardShell] Failed to fetch exchange rates, using fallback:', err.message));
+          });
         } else {
           // Invalid role — redirect to login
           window.location.href = '/login';
@@ -91,6 +109,7 @@ export default function DashboardShell({ initialView }) {
 
     checkAuth();
   }, [dispatch, initialView]);
+
 
   // Sync activeView to URL path & localStorage ONLY AFTER loading is complete
   useEffect(() => {

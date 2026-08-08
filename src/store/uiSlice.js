@@ -6,6 +6,8 @@ const initialState = {
   activeView: 'dashboard',
   searchQuery: '',
   currency: 'INR',
+  exchangeRate: 85.0,
+  ratesMap: null,
 };
 
 export const uiSlice = createSlice({
@@ -40,8 +42,23 @@ export const uiSlice = createSlice({
     setCurrency: (state, action) => {
       state.currency = action.payload;
     },
+    setExchangeRate: (state, action) => {
+      state.exchangeRate = action.payload;
+    },
+    setRatesMap: (state, action) => {
+      state.ratesMap = action.payload;
+    },
   },
 });
 
-export const { toggleSidebar, setSidebarCollapsed, setTheme, setActiveView, setSearchQuery, setCurrency } = uiSlice.actions;
+export const { 
+  toggleSidebar, 
+  setSidebarCollapsed, 
+  setTheme, 
+  setActiveView, 
+  setSearchQuery, 
+  setCurrency,
+  setExchangeRate,
+  setRatesMap
+} = uiSlice.actions;
 export default uiSlice.reducer;

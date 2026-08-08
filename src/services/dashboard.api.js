@@ -92,7 +92,8 @@ export const dashboardApi = {
       trend,
       pie,
       latestUsers,
-      latestPayments
+      latestPayments,
+      revenueCurrency: cards.revenue?.revenueCurrency || 'INR',
     };
   }
 };
