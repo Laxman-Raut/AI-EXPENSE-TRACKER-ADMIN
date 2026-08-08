@@ -79,8 +79,8 @@ export default function DashboardShell({ initialView }) {
 
           // Fetch live exchange rates for dynamic currency conversion
           import('@/lib/api').then(({ default: apiClient }) => {
-            apiClient.get('/v1/currency/rates')
-              .then((res) => {
+            const fetchRates = (url) =>
+              apiClient.get(url).then((res) => {
                 if (res.data?.success && res.data?.data) {
                   const rateData = res.data.data;
                   if (rateData.usdToInr) {
@@ -89,9 +89,14 @@ export default function DashboardShell({ initialView }) {
                   if (rateData.rates) {
                     dispatch(setRatesMap(rateData.rates));
                   }
-                  console.log('[DashboardShell] Live exchange rates loaded:', rateData.usdToInr);
+                  console.log('[DashboardShell] Live exchange rates loaded successfully:', rateData.usdToInr, 'from', url);
+                  return true;
                 }
-              })
+                return false;
+              });
+
+            fetchRates('/currency/rates')
+              .catch(() => fetchRates('/v1/currency/rates'))
               .catch((err) => console.warn('[DashboardShell] Failed to fetch exchange rates, using fallback:', err.message));
           });
         } else {
