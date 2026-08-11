@@ -287,7 +287,7 @@ export default function PlansView() {
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-bold text-foreground uppercase tracking-wider">{plan.name}</span>
                     <span className="px-1.5 py-0.5 rounded text-[10px] font-extrabold bg-primary/10 text-primary border border-primary/20">
-                      Base: {baseCurrency}
+                      INR (₹)
                     </span>
                   </div>
                   <div className="flex items-center gap-1.5">
@@ -319,17 +319,12 @@ export default function PlansView() {
                 <div className="mt-4 flex flex-col">
                   <div className="flex items-baseline text-foreground">
                     <span className="text-3xl font-extrabold tracking-tight">
-                      {formatAmount(plan.price || plan.basePrice || 0, baseCurrency)}
+                      {formatAmount(plan.price || plan.basePrice || 0)}
                     </span>
                     <span className="ml-1 text-xs font-semibold text-muted-foreground">/{frequencyLabel}</span>
                   </div>
                   <div className="text-[11px] font-medium text-muted-foreground mt-0.5">
-                    <span>Base Currency: {baseCurrency}</span>
-                    {baseCurrency !== currency && (
-                      <span className="ml-1 text-muted-foreground/80">
-                        (Original: {baseCurrency === 'USD' ? '$' : '₹'}{plan.price || plan.basePrice})
-                      </span>
-                    )}
+                    <span>Currency: INR (₹)</span>
                   </div>
                 </div>
                 

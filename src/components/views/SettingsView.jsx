@@ -359,24 +359,20 @@ export default function SettingsView() {
                   </label>
                 </div>
 
-                {/* Dashboard Display Currency Switcher */}
+                {/* Dashboard Display Currency (Fixed to INR) */}
                 <div className="flex items-center justify-between p-4 rounded-lg bg-primary/5 border border-primary/20">
                   <div className="pr-4">
                     <h4 className="text-sm font-bold text-foreground flex items-center gap-2">
                       <DollarSign size={16} className="text-primary" />
-                      Dashboard Display Currency
+                      Dashboard System Currency
                     </h4>
                     <p className="text-xs text-muted-foreground mt-1">
-                      Controls how amounts are displayed in the Admin Dashboard. (Mobile App users retain their own currency choices).
+                      The Admin Dashboard operates exclusively in INR (₹). All revenue, plans, reports, and payments are managed in INR.
                     </p>
                   </div>
-                  <select
-                    {...register('currency')}
-                    className="h-10 px-3 rounded-lg border-2 border-primary bg-background text-sm font-bold text-foreground focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all"
-                  >
-                    <option value="INR">INR (₹) — Indian Rupee</option>
-                    <option value="USD">USD ($) — US Dollar</option>
-                  </select>
+                  <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-primary/10 text-primary font-bold text-sm border border-primary/20">
+                    INR (₹) — Indian Rupee
+                  </span>
                 </div>
 
              </div>
