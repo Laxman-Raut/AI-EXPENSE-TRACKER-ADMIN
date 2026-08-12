@@ -17,7 +17,8 @@ import {
   ChevronLeft, 
   ChevronRight,
   TrendingDown,
-  Ticket
+  Ticket,
+  HelpCircle
 } from 'lucide-react';
 
 const MENU_ITEMS = [
@@ -30,6 +31,7 @@ const MENU_ITEMS = [
   { id: 'analytics', label: 'Analytics', icon: TrendingUp },
   { id: 'reports', label: 'Reports', icon: FileText },
   { id: 'notifications', label: 'Notifications', icon: Bell },
+  { id: 'support-queries', label: 'Support Queries', icon: HelpCircle },
   { id: 'ai-usage', label: 'AI Usage', icon: Cpu },
   { id: 'settings', label: 'Settings', icon: Settings },
 ];

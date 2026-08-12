@@ -18,6 +18,7 @@ import PaymentsView from '@/components/views/PaymentsView';
 import AnalyticsView from '@/components/views/AnalyticsView';
 import ReportsView from '@/components/views/ReportsView';
 import NotificationsView from '@/components/views/NotificationsView';
+import SupportQueriesView from '@/components/views/SupportQueriesView';
 import AiUsageView from '@/components/views/AiUsageView';
 import SettingsView from '@/components/views/SettingsView';
 
@@ -31,6 +32,7 @@ const VALID_VIEWS = [
   'analytics',
   'reports',
   'notifications',
+  'support-queries',
   'ai-usage',
   'settings'
 ];
@@ -165,6 +167,8 @@ export default function DashboardShell({ initialView }) {
         return <ReportsView />;
       case 'notifications':
         return <NotificationsView />;
+      case 'support-queries':
+        return <SupportQueriesView />;
       case 'ai-usage':
         return <AiUsageView />;
       case 'settings':
