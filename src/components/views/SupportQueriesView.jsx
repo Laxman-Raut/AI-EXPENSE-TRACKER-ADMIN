@@ -17,6 +17,7 @@ import {
   MessageSquare,
   Eye,
   RefreshCw,
+  Phone,
 } from 'lucide-react';
 
 export default function SupportQueriesView() {
@@ -239,6 +240,16 @@ export default function SupportQueriesView() {
                               <Mail size={12} />
                               {item.userEmail}
                             </p>
+                            {item.phoneNumber ? (
+                              <a
+                                href={`tel:${(item.countryCode || '+91')}${item.phoneNumber}`}
+                                className="text-xs text-primary hover:underline truncate flex items-center gap-1 mt-0.5 font-medium"
+                                title="Click to Call"
+                              >
+                                <Phone size={11} />
+                                {item.countryCode || '+91'} {item.phoneNumber}
+                              </a>
+                            ) : null}
                           </div>
                         </div>
                       </td>
@@ -280,7 +291,8 @@ export default function SupportQueriesView() {
                               <AlertCircle size={12} />
                               Pending
                             </>
-                          )}
+                          )
+                          }
                         </span>
                       </td>
 
@@ -347,11 +359,30 @@ export default function SupportQueriesView() {
               </span>
             </div>
 
-            <div>
-              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                Subject
-              </label>
-              <p className="font-semibold text-foreground mt-0.5">{selectedQuery.subject}</p>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  Contact Phone
+                </label>
+                {selectedQuery.phoneNumber ? (
+                  <a
+                    href={`tel:${(selectedQuery.countryCode || '+91')}${selectedQuery.phoneNumber}`}
+                    className="flex items-center gap-1.5 text-sm font-bold text-primary hover:underline mt-0.5"
+                  >
+                    <Phone size={14} />
+                    {selectedQuery.countryCode || '+91'} {selectedQuery.phoneNumber}
+                  </a>
+                ) : (
+                  <p className="text-sm font-medium text-muted-foreground mt-0.5">Not Provided</p>
+                )}
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  Subject
+                </label>
+                <p className="font-semibold text-foreground mt-0.5">{selectedQuery.subject}</p>
+              </div>
             </div>
 
             <div>
