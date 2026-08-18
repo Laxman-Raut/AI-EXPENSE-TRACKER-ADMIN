@@ -91,6 +91,45 @@ export default function DashboardOverview({ onViewChange }) {
     }));
   }, [rawPie, currency, convertAmount]);
 
+  // Extract all unique plan keys dynamically from trend data for AreaChart
+  const planKeys = React.useMemo(() => {
+    if (!trend || trend.length === 0) return [];
+    const keysSet = new Set();
+    trend.forEach(item => {
+      Object.keys(item).forEach(k => {
+        if (k !== 'name' && k !== 'Total') {
+          keysSet.add(k);
+        }
+      });
+    });
+    const list = Array.from(keysSet);
+    list.sort((a, b) => {
+      if (a === 'Free Tier') return 1;
+      if (b === 'Free Tier') return -1;
+      return a.localeCompare(b);
+    });
+    return list;
+  }, [trend]);
+
+  const PLAN_COLORS_MAP = {
+    'Free Tier': '#94a3b8',
+    'Basic Plan': '#6366f1',
+    'Pro Plan': '#10b981',
+    'Business Plan': '#f59e0b',
+    'Enterprise Plan': '#ec4899',
+    'Ultra Pros Plan': '#8b5cf6',
+  };
+
+  const DYNAMIC_PALETTE = [
+    '#6366f1', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6',
+    '#06b6d4', '#f97316', '#14b8a6', '#a855f7', '#3b82f6'
+  ];
+
+  const getAreaColor = (planName, index) => {
+    if (PLAN_COLORS_MAP[planName]) return PLAN_COLORS_MAP[planName];
+    return DYNAMIC_PALETTE[index % DYNAMIC_PALETTE.length];
+  };
+
   // Render stats cards grid
   const renderStats = () => {
     if (isLoading || !stats) {
@@ -205,22 +244,16 @@ export default function DashboardOverview({ onViewChange }) {
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={trend}>
                   <defs>
-                    <linearGradient id="colorFree" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#94a3b8" stopOpacity={0.15}/>
-                      <stop offset="95%" stopColor="#94a3b8" stopOpacity={0}/>
-                    </linearGradient>
-                    <linearGradient id="colorBasic" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#6366f1" stopOpacity={0.15}/>
-                      <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
-                    </linearGradient>
-                    <linearGradient id="colorPro" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.15}/>
-                      <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
-                    </linearGradient>
-                    <linearGradient id="colorBusiness" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.15}/>
-                      <stop offset="95%" stopColor="#f59e0b" stopOpacity={0}/>
-                    </linearGradient>
+                    {planKeys.map((planName, index) => {
+                      const color = getAreaColor(planName, index);
+                      const gradientId = `colorPlan_${index}`;
+                      return (
+                        <linearGradient key={gradientId} id={gradientId} x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor={color} stopOpacity={0.25}/>
+                          <stop offset="95%" stopColor={color} stopOpacity={0}/>
+                        </linearGradient>
+                      );
+                    })}
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" opacity={0.3} />
                   <XAxis dataKey="name" tick={{ fontSize: 10 }} stroke="#94A3B8" />
@@ -236,9 +269,21 @@ export default function DashboardOverview({ onViewChange }) {
                       fontSize: '12px'
                     }} 
                   />
-                  <Area type="monotone" dataKey="Basic Plan" stackId="1" stroke="#6366f1" fillOpacity={1} fill="url(#colorBasic)" />
-                  <Area type="monotone" dataKey="Pro Plan" stackId="1" stroke="#10b981" fillOpacity={1} fill="url(#colorPro)" />
-                  <Area type="monotone" dataKey="Business Plan" stackId="1" stroke="#f59e0b" fillOpacity={1} fill="url(#colorBusiness)" />
+                  {planKeys.map((planName, index) => {
+                    const color = getAreaColor(planName, index);
+                    const gradientId = `colorPlan_${index}`;
+                    return (
+                      <Area 
+                        key={planName}
+                        type="monotone" 
+                        dataKey={planName} 
+                        stackId="1" 
+                        stroke={color} 
+                        fillOpacity={1} 
+                        fill={`url(#${gradientId})`} 
+                      />
+                    );
+                  })}
                 </AreaChart>
               </ResponsiveContainer>
             </div>
@@ -293,7 +338,7 @@ export default function DashboardOverview({ onViewChange }) {
               </div>
 
               {/* Legends */}
-              <div className="mt-4 w-full grid grid-cols-2 gap-2">
+              <div className="mt-4 w-full grid grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1">
                 {pie.map((entry, index) => (
                   <div key={`${entry.name}-${index}`} className="flex flex-col items-center text-center p-1.5 rounded-lg bg-muted/20 border border-border/50">
                     <span className="flex items-center gap-1.5 text-[10px] font-semibold text-muted-foreground truncate max-w-full">

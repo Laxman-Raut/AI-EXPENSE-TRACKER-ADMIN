@@ -38,30 +38,50 @@ export const dashboardApi = {
       activePlans: [cards.plans.active || 0]
     };
 
-    // Adapt charts
+    // Color palette for plans
     const PLAN_COLORS = {
       'free': '#94a3b8',
       'basic': '#6366f1',
       'pro': '#10b981',
       'business': '#f59e0b',
-      'enterprise': '#f59e0b'
+      'business-plan': '#f59e0b',
+      'enterprise': '#ec4899',
+      'enterprise-plan': '#ec4899',
+      'ultra-pros': '#8b5cf6',
+      'ultra-pro': '#8b5cf6',
+    };
+
+    const PALETTE = [
+      '#6366f1', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6',
+      '#06b6d4', '#f97316', '#14b8a6', '#a855f7', '#3b82f6',
+    ];
+
+    const getPlanColor = (slug, index) => {
+      const s = String(slug || '').toLowerCase().trim();
+      if (PLAN_COLORS[s]) return PLAN_COLORS[s];
+      return PALETTE[index % PALETTE.length];
     };
 
     // 1. Revenue trend: backend gives array of { date, revenue, plans }
-    const trend = charts.revenueTrend?.map(t => ({
-      name: t.date || t._id,
-      Total: t.revenue || 0,
-      'Free Tier': t.plans ? (t.plans['Free Tier'] || 0) : 0,
-      'Basic Plan': t.plans ? (t.plans['Basic Plan'] || 0) : 0,
-      'Pro Plan': t.plans ? (t.plans['Pro Plan'] || 0) : 0,
-      'Business Plan': t.plans ? (t.plans['Business Plan'] || 0) : (t.revenue || 0),
-    })) || [];
+    const trend = charts.revenueTrend?.map(t => {
+      const item = {
+        name: t.date || t._id,
+        Total: t.revenue || 0,
+      };
+      if (t.plans && typeof t.plans === 'object') {
+        Object.entries(t.plans).forEach(([planName, val]) => {
+          item[planName] = val || 0;
+        });
+      }
+      return item;
+    }) || [];
 
     // 2. Revenue by plan (Pie Chart): backend gives array of { slug, name, revenue, payments }
-    const pie = charts.revenueByPlan?.map(p => ({
-      name: p.name || (p.slug === 'pro' ? 'Pro Plan' : (p.slug === 'basic' ? 'Basic Plan' : (p.slug === 'business' ? 'Business Plan' : 'Free Tier'))),
+    const pie = charts.revenueByPlan?.map((p, idx) => ({
+      name: p.name || 'Free Tier',
       value: p.revenue || 0,
-      color: PLAN_COLORS[p.slug || 'free'] || '#3b82f6'
+      color: getPlanColor(p.slug, idx),
+      slug: p.slug
     })) || [];
 
     // Adapt recentActivity tables
