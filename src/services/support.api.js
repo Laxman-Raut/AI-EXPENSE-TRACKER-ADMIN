@@ -9,4 +9,8 @@ export const supportApi = {
     const response = await apiClient.patch(`/v1/admin/support-queries/${id}/status`, { status });
     return response.data;
   },
+  replyToQuery: async (id, payload) => {
+    const response = await apiClient.post(`/v1/admin/support-queries/${id}/reply`, payload);
+    return response.data;
+  },
 };

@@ -18,12 +18,18 @@ import {
   Eye,
   RefreshCw,
   Phone,
+  Send,
 } from 'lucide-react';
 
 export default function SupportQueriesView() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
   const [selectedQuery, setSelectedQuery] = useState(null);
+  const [replyModalQuery, setReplyModalQuery] = useState(null);
+  const [replySubject, setReplySubject] = useState('');
+  const [replyMessage, setReplyMessage] = useState('');
+  const [replyStatus, setReplyStatus] = useState('resolved');
+  const [replySuccessMsg, setReplySuccessMsg] = useState('');
 
   const queryClient = useQueryClient();
 
@@ -44,6 +50,45 @@ export default function SupportQueriesView() {
       queryClient.invalidateQueries({ queryKey: ['supportQueries'] });
     },
   });
+
+  const replyMutation = useMutation({
+    mutationFn: ({ id, payload }) => supportApi.replyToQuery(id, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['supportQueries'] });
+      setReplySuccessMsg('Email response dispatched successfully!');
+      setTimeout(() => {
+        setReplySuccessMsg('');
+        setReplyModalQuery(null);
+      }, 1200);
+    },
+  });
+
+  const handleOpenReply = (item) => {
+    setReplyModalQuery(item);
+    setReplySubject(`Re: ${item.subject || 'Support Request'}`);
+    setReplyMessage(
+      `Hello ${item.userName || 'User'},\n\nWe have reviewed your support query regarding "${item.subject || 'your request'}" and resolved the issue. Please let us know if you need any further assistance.\n\nBest regards,\nExpenso Support Team`
+    );
+    setReplyStatus('resolved');
+  };
+
+  const applyPreset = (type, item) => {
+    const name = item?.userName || 'User';
+    const subj = item?.subject || 'Query';
+    if (type === 'resolved') {
+      setReplySubject(`Re: ${subj} - Problem Resolved`);
+      setReplyMessage(`Hello ${name},\n\nWe have reviewed your request regarding "${subj}" and resolved the issue. Please check in the app and let us know if you need any further help.\n\nBest regards,\nExpenso Support Team`);
+      setReplyStatus('resolved');
+    } else if (type === 'investigating') {
+      setReplySubject(`Re: ${subj} - Under Investigation`);
+      setReplyMessage(`Hello ${name},\n\nWe are actively investigating your issue regarding "${subj}". Our technical team is working on it and we will update you shortly.\n\nBest regards,\nExpenso Support Team`);
+      setReplyStatus('in_progress');
+    } else if (type === 'info') {
+      setReplySubject(`Re: ${subj} - More Info Required`);
+      setReplyMessage(`Hello ${name},\n\nThank you for contacting support regarding "${subj}". Could you please reply with additional details or a screenshot so we can assist you better?\n\nBest regards,\nExpenso Support Team`);
+      setReplyStatus('pending');
+    }
+  };
 
   // Filter queries by search and status
   const filteredQueries = queries.filter((item) => {
@@ -300,6 +345,15 @@ export default function SupportQueriesView() {
                       <td className="px-6 py-4 text-right whitespace-nowrap">
                         <div className="flex items-center justify-end gap-2">
                           <button
+                            onClick={() => handleOpenReply(item)}
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-primary/30 bg-primary/10 text-primary hover:bg-primary/20 text-xs font-semibold transition-colors"
+                            title="Send Email Reply to User"
+                          >
+                            <Send size={13} />
+                            Reply
+                          </button>
+
+                          <button
                             onClick={() => setSelectedQuery(item)}
                             className="p-1.5 rounded-lg border border-border hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors"
                             title="View Full Query"
@@ -394,6 +448,17 @@ export default function SupportQueriesView() {
               </div>
             </div>
 
+            {/* Display Past Admin Reply if present */}
+            {selectedQuery.adminReply ? (
+              <div className="p-3.5 bg-primary/10 border border-primary/20 rounded-xl space-y-1">
+                <div className="flex items-center justify-between text-xs font-bold text-primary">
+                  <span className="flex items-center gap-1"><Send size={12} /> Last Admin Reply Sent</span>
+                  <span>{selectedQuery.repliedAt ? new Date(selectedQuery.repliedAt).toLocaleString() : ''}</span>
+                </div>
+                <p className="text-xs text-foreground whitespace-pre-wrap mt-1 leading-relaxed">{selectedQuery.adminReply}</p>
+              </div>
+            ) : null}
+
             <div className="text-xs text-muted-foreground pt-2 border-t border-border flex items-center justify-between">
               <span>
                 Submitted on:{' '}
@@ -405,6 +470,17 @@ export default function SupportQueriesView() {
 
             <div className="flex justify-end gap-3 pt-3">
               <button
+                onClick={() => {
+                  const q = selectedQuery;
+                  setSelectedQuery(null);
+                  handleOpenReply(q);
+                }}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-primary text-primary-foreground hover:bg-primary/95 shadow-sm transition-colors"
+              >
+                <Send size={13} />
+                Send Email Reply
+              </button>
+              <button
                 onClick={() => handleToggleStatus(selectedQuery)}
                 className={`px-4 py-2 rounded-xl text-xs font-semibold transition-colors ${
                   selectedQuery.status === 'resolved'
@@ -414,6 +490,143 @@ export default function SupportQueriesView() {
               >
                 {selectedQuery.status === 'resolved' ? 'Mark as Pending' : 'Mark as Resolved'}
               </button>
+            </div>
+          </div>
+        </Dialog>
+      )}
+
+      {/* Admin Email Reply Modal */}
+      {replyModalQuery && (
+        <Dialog
+          isOpen={!!replyModalQuery}
+          onClose={() => setReplyModalQuery(null)}
+          title={`Reply to ${replyModalQuery.userName || 'User'}`}
+        >
+          <div className="space-y-4">
+            {replySuccessMsg ? (
+              <div className="p-4 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-xs font-bold flex items-center gap-2">
+                <CheckCircle size={16} />
+                <span>{replySuccessMsg}</span>
+              </div>
+            ) : null}
+
+            {/* Recipient summary */}
+            <div className="flex items-center justify-between p-3 rounded-xl bg-muted/20 border border-border">
+              <div className="flex items-center gap-2.5">
+                <Mail size={16} className="text-primary" />
+                <div>
+                  <p className="text-xs font-bold text-foreground">{replyModalQuery.userName}</p>
+                  <p className="text-[11px] text-muted-foreground">{replyModalQuery.userEmail}</p>
+                </div>
+              </div>
+              <span className="text-[10px] font-bold text-muted-foreground uppercase bg-secondary px-2 py-0.5 rounded-full">
+                Via Brevo Email API
+              </span>
+            </div>
+
+            {/* Quick Preset Buttons */}
+            <div>
+              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1.5">
+                Quick Response Templates
+              </label>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => applyPreset('resolved', replyModalQuery)}
+                  className="px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-500/10 text-emerald-600 border border-emerald-500/30 hover:bg-emerald-500/20 transition-colors"
+                >
+                  🟢 Problem Resolved
+                </button>
+                <button
+                  type="button"
+                  onClick={() => applyPreset('investigating', replyModalQuery)}
+                  className="px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-500/10 text-amber-600 border border-amber-500/30 hover:bg-amber-500/20 transition-colors"
+                >
+                  🟡 Under Investigation
+                </button>
+                <button
+                  type="button"
+                  onClick={() => applyPreset('info', replyModalQuery)}
+                  className="px-2.5 py-1 rounded-lg text-xs font-bold bg-blue-500/10 text-blue-600 border border-blue-500/30 hover:bg-blue-500/20 transition-colors"
+                >
+                  🔵 More Info Needed
+                </button>
+              </div>
+            </div>
+
+            {/* Subject */}
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                Email Subject
+              </label>
+              <input
+                type="text"
+                value={replySubject}
+                onChange={(e) => setReplySubject(e.target.value)}
+                className="w-full h-9 px-3 rounded-lg border border-border text-xs bg-background text-foreground font-semibold focus:outline-none focus:ring-1 focus:ring-primary"
+              />
+            </div>
+
+            {/* Message Body */}
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                Response Message (HTML Email to User)
+              </label>
+              <textarea
+                rows={5}
+                value={replyMessage}
+                onChange={(e) => setReplyMessage(e.target.value)}
+                placeholder="Type your response to the user..."
+                className="w-full p-3 rounded-lg border border-border text-xs bg-background text-foreground font-normal focus:outline-none focus:ring-1 focus:ring-primary leading-relaxed"
+              />
+            </div>
+
+            {/* Ticket Status Select */}
+            <div className="flex items-center justify-between border-t border-border pt-3">
+              <div className="flex items-center gap-2">
+                <label className="text-xs font-semibold text-muted-foreground">Set Ticket Status:</label>
+                <select
+                  value={replyStatus}
+                  onChange={(e) => setReplyStatus(e.target.value)}
+                  className="h-8 rounded-lg border border-border text-xs bg-background text-foreground px-2 font-bold focus:outline-none"
+                >
+                  <option value="resolved">Resolved (Completed)</option>
+                  <option value="in_progress">In Progress</option>
+                  <option value="pending">Pending</option>
+                </select>
+              </div>
+
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setReplyModalQuery(null)}
+                  className="px-3.5 py-1.5 rounded-lg border border-border text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={replyMutation.isPending || !replyMessage.trim()}
+                  onClick={() => {
+                    replyMutation.mutate({
+                      id: replyModalQuery._id || replyModalQuery.id,
+                      payload: {
+                        subject: replySubject,
+                        message: replyMessage,
+                        status: replyStatus,
+                      },
+                    });
+                  }}
+                  className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-primary hover:bg-primary/95 text-primary-foreground text-xs font-bold shadow-md transition-colors disabled:opacity-50"
+                >
+                  {replyMutation.isPending ? (
+                    <RefreshCw size={13} className="animate-spin" />
+                  ) : (
+                    <Send size={13} />
+                  )}
+                  Send Email Response
+                </button>
+              </div>
             </div>
           </div>
         </Dialog>
