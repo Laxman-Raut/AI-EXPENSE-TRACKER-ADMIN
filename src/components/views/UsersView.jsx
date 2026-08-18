@@ -374,59 +374,61 @@ export default function UsersView() {
           setDialogTab('profile');
         }}
         title="User Record & Subscription Details"
+        position="right"
       >
         {selectedUser && (
-          <div className="space-y-4 text-sm animate-in fade-in duration-200">
+          <div className="space-y-6 text-sm animate-in fade-in duration-200 py-1">
             {/* Tabs Selector */}
-            <div className="flex border-b border-border pb-1 gap-4 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+            <div className="flex border-b border-border pb-1 gap-6 text-xs font-bold uppercase tracking-wider text-muted-foreground">
               <button
                 onClick={() => setDialogTab('profile')}
-                className={`pb-2 border-b-2 transition-all ${dialogTab === 'profile' ? 'border-primary text-foreground' : 'border-transparent'}`}
+                className={`pb-2.5 border-b-2 transition-all ${dialogTab === 'profile' ? 'border-primary text-foreground font-extrabold' : 'border-transparent'}`}
               >
                 Profile Info
               </button>
               <button
                 onClick={() => setDialogTab('subscription')}
-                className={`pb-2 border-b-2 transition-all ${dialogTab === 'subscription' ? 'border-primary text-foreground' : 'border-transparent'}`}
+                className={`pb-2.5 border-b-2 transition-all ${dialogTab === 'subscription' ? 'border-primary text-foreground font-extrabold' : 'border-transparent'}`}
               >
                 Manage Subscription
               </button>
             </div>
 
             {dialogTab === 'profile' ? (
-              <>
-                <div className="flex items-center gap-3.5 pb-4 border-b border-border mt-3">
-                  <div className="h-12 w-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-bold text-sm border border-primary/20 shrink-0">
+              <div className="space-y-6">
+                <div className="flex items-center gap-4 p-4 rounded-xl bg-muted/20 border border-border/60">
+                  <div className="h-16 w-16 rounded-2xl bg-primary/10 text-primary flex items-center justify-center font-bold text-xl border border-primary/20 shrink-0 shadow-sm">
                     {selectedUser.avatar}
                   </div>
-                  <div>
-                    <h4 className="font-bold text-foreground text-base">{selectedUser.name}</h4>
-                    <p className="text-xs text-muted-foreground">{selectedUser.email}</p>
+                  <div className="space-y-1">
+                    <h4 className="font-bold text-foreground text-lg tracking-tight">{selectedUser.name}</h4>
+                    <p className="text-xs text-muted-foreground font-medium">{selectedUser.email}</p>
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4 mt-2">
-                  <div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="p-3.5 rounded-xl bg-muted/15 border border-border/50 space-y-1">
                     <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Subscription Tier</span>
-                    <p className="font-semibold text-foreground mt-0.5">{selectedUser.subscription}</p>
+                    <p className="font-bold text-foreground text-sm">{selectedUser.subscription}</p>
                   </div>
-                  <div>
+                  <div className="p-3.5 rounded-xl bg-muted/15 border border-border/50 space-y-1">
                     <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Status</span>
-                    <p className="mt-0.5">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-semibold border ${getStatusColor(selectedUser.status)}`}>
+                    <div>
+                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold border ${getStatusColor(selectedUser.status)}`}>
                         {selectedUser.status}
                       </span>
-                    </p>
+                    </div>
                   </div>
-                  <div>
+                  <div className="p-3.5 rounded-xl bg-muted/15 border border-border/50 space-y-1">
                     <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Member Since</span>
-                    <p className="font-semibold text-foreground mt-0.5">{selectedUser.joinedDate}</p>
+                    <p className="font-bold text-foreground text-sm">{selectedUser.joinedDate}</p>
                   </div>
-                  <div>
+                  <div className="p-3.5 rounded-xl bg-muted/15 border border-border/50 space-y-1">
                     <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">User Reference ID</span>
-                    <p className="font-mono text-xs text-foreground mt-0.5">{selectedUser.id}</p>
+                    <p className="font-mono text-xs font-semibold text-foreground truncate">{selectedUser.id}</p>
                   </div>
                 </div>
-              </>
+              </div>
             ) : (
               <div className="space-y-4 mt-2">
                 {/* Subscription Action Form */}

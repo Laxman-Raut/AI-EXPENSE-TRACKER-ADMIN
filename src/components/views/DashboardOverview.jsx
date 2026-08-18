@@ -474,39 +474,40 @@ export default function DashboardOverview({ onViewChange }) {
       <Dialog 
         isOpen={!!selectedUser} 
         onClose={() => setSelectedUser(null)}
-        title="User Record details"
+        title="User Record Details"
+        position="right"
       >
         {selectedUser && (
-          <div className="space-y-4 text-sm">
-            <div className="flex items-center gap-3.5 pb-4 border-b border-border">
-              <div className="h-12 w-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-bold text-sm border border-primary/20 shrink-0">
+          <div className="space-y-6 text-sm py-1">
+            <div className="flex items-center gap-4 p-4 rounded-xl bg-muted/20 border border-border/60">
+              <div className="h-16 w-16 rounded-2xl bg-primary/10 text-primary flex items-center justify-center font-bold text-xl border border-primary/20 shrink-0 shadow-sm">
                 {selectedUser.avatar}
               </div>
-              <div>
-                <h4 className="font-bold text-foreground text-base">{selectedUser.name}</h4>
-                <p className="text-xs text-muted-foreground">{selectedUser.email}</p>
+              <div className="space-y-1">
+                <h4 className="font-bold text-foreground text-lg tracking-tight">{selectedUser.name}</h4>
+                <p className="text-xs text-muted-foreground font-medium">{selectedUser.email}</p>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <div>
-                <span className="text-xs font-semibold text-muted-foreground uppercase">Subscription Tier</span>
-                <p className="font-semibold text-foreground mt-0.5">{selectedUser.subscription}</p>
+              <div className="p-3.5 rounded-xl bg-muted/15 border border-border/50 space-y-1">
+                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Subscription Tier</span>
+                <p className="font-bold text-foreground text-sm">{selectedUser.subscription}</p>
               </div>
-              <div>
-                <span className="text-xs font-semibold text-muted-foreground uppercase">Status</span>
-                <p className="mt-0.5">
-                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border ${getStatusColor(selectedUser.status)}`}>
+              <div className="p-3.5 rounded-xl bg-muted/15 border border-border/50 space-y-1">
+                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Status</span>
+                <div>
+                  <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold border ${getStatusColor(selectedUser.status)}`}>
                     {selectedUser.status}
                   </span>
-                </p>
+                </div>
               </div>
-              <div>
-                <span className="text-xs font-semibold text-muted-foreground uppercase">Member Since</span>
-                <p className="font-semibold text-foreground mt-0.5">{selectedUser.joinedDate}</p>
+              <div className="p-3.5 rounded-xl bg-muted/15 border border-border/50 space-y-1">
+                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Member Since</span>
+                <p className="font-bold text-foreground text-sm">{selectedUser.joinedDate}</p>
               </div>
-              <div>
-                <span className="text-xs font-semibold text-muted-foreground uppercase">User Reference ID</span>
-                <p className="font-mono text-xs text-foreground mt-0.5">{selectedUser.id}</p>
+              <div className="p-3.5 rounded-xl bg-muted/15 border border-border/50 space-y-1">
+                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">User Reference ID</span>
+                <p className="font-mono text-xs font-semibold text-foreground truncate">{selectedUser.id}</p>
               </div>
             </div>
             
@@ -516,9 +517,9 @@ export default function DashboardOverview({ onViewChange }) {
                   alert(`Logs opened for user ${selectedUser.id}`);
                   setSelectedUser(null);
                 }}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border hover:bg-secondary text-xs font-semibold transition-colors"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-border hover:bg-secondary text-xs font-semibold transition-colors"
               >
-                <ExternalLink size={12} />
+                <ExternalLink size={14} />
                 Inspect Full Logs
               </button>
               <button 
