@@ -16,7 +16,7 @@ export const authApi = {
 
   // Refresh token — uses refresh_token cookie
   refreshToken: async () => {
-    const baseURL = typeof window !== 'undefined' ? '/api' : (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api');
+    const baseURL = typeof window !== 'undefined' ? '/api' : (process.env.NEXT_PUBLIC_API_URL || 'https://ai-expense-backend-veoz.onrender.com/api');
     const response = await axios.post(
       `${baseURL}/auth/refresh-token`,
       {},
